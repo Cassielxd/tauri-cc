@@ -19,6 +19,8 @@ nodejs
 #### 软件架构
 
 软件架构说明
+前端框架 vue3 + vite + tailwindcss
+后端框架 deno + tauri
 
 #### 开发环境
 
@@ -26,12 +28,24 @@ nodejs
 2：开发工具 RustRover
 3: nodejs 最新版本18.0.0
 4：tauri-cli 最新版本 1.5
+5：配置RUSTY_V8_MIRROR 环境变量
+https://github.com/denoland/rusty_v8/releases 下载v8 对应版本
 
 ### 使用说明
 
 1. 启动前端： 进入frontend目录，执行 pnpm install && pnpm run dev
 2. 构建tauri： 根目录下执行 cargo build
 3. 进入tauri-src目录运行： 执行 cargo run
+
+### 包结构说明
+
+```
+frontend   //前端目录
+ext  //deno 扩展
+micro_engine  //deno 核心
+tauri-src  //tauri 后端
+resources  //deno代码目录 默认启动这个目录下的main.ts
+```
 
 #### 参与贡献
 
