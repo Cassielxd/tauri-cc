@@ -7,7 +7,7 @@ members = [
 ]
 
 [workspace.package]
-authors = ["the cassie authors"]
+authors = ["String 348040933@qq.com"]
 edition = "2021"
 license = "MIT"
 repository = "https://gitee.com/stringlxd/tauri-cc"
