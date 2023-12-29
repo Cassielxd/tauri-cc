@@ -83,7 +83,7 @@ indexmap = { version = "2", features = ["serde"] }
 memmem = "0.1.1"
 simple_http = { version = "0.1.0", path = "./ext/simple_http" }
 micro_engine = { version = "0.1.0", path = "./micro_engine" }
-
+tauri = { version = "1", features = [] }
 # unix
 nix = "=0.26.2"
 # windows deps
