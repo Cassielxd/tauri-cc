@@ -1,6 +1,4 @@
-use std::cell::RefCell;
 use std::collections::HashMap;
-use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, Ordering};
 use micro_engine::args::{flags_from_vec};
@@ -11,7 +9,7 @@ use micro_engine::tools::run::maybe_npm_install;
 use std::thread;
 use futures::task::AtomicWaker;
 use tokio::select;
-use micro_engine::deno_runtime::deno_core::{CancelHandle, v8};
+use micro_engine::deno_runtime::deno_core::{v8};
 use micro_engine::deno_runtime::deno_core::error::AnyError;
 
 pub type MainWorkersTable = HashMap<String, MainWorkerThread>;
@@ -66,8 +64,6 @@ impl MainWorkerHandle {
 
 pub struct MainWorkerThread {
     worker_handle: MainWorkerHandle,
-    ctrl_closed: bool,
-    message_closed: bool,
 }
 
 impl Drop for MainWorkerThread {
@@ -140,9 +136,7 @@ pub fn init_engine(key: String) -> Result<(), AnyError> {
     let worker_handle = handle_receiver.recv().unwrap().unwrap();
     // 创建MainWorkerThread实例
     let worker_thread = MainWorkerThread {
-        worker_handle: worker_handle.into(),
-        ctrl_closed: false,
-        message_closed: false,
+        worker_handle: worker_handle.into()
     };
     let mut stable = MAIN_WORKER_STABLE.lock().unwrap();
     stable.insert(key, worker_thread);

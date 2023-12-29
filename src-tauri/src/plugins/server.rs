@@ -24,32 +24,16 @@ async fn run_http() {
 }
 
 
-async fn start<R: Runtime>(app_handler: AppHandle<R>) {
-    let _ = init_engine("default".to_string());
+async fn start<R: Runtime>(_app_handler: AppHandle<R>) {
     run_http().await;
 }
 
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("server")
-        .setup(|handle, api| {
+        .setup(|handle| {
+            let _ = init_engine("default".to_string());
             tokio::task::spawn(start(handle.clone()));
             Ok(())
-        })
-        .on_event(|app, event| {
-            match event {
-                RunEvent::Exit => {
-                    //用户程序即将退出
-                }
-                RunEvent::ExitRequested { .. } => {}
-                RunEvent::WindowEvent { label, event, .. } => {
-                    //窗口事件
-                }
-                RunEvent::Ready => {}
-                RunEvent::Resumed => {}
-                RunEvent::MainEventsCleared => {}
-                RunEvent::MenuEvent(_) => {}
-                _ => {}
-            }
         })
         .build()
 }

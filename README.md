@@ -1,0 +1,42 @@
+# tauri-cc
+
+#### 介绍
+
+rust 桌面端开发框架 tauri 和deno的融合，如果对性能要求比较高可以使用rust 开发 也可以使用 deno开发 tauri ，对前端开发友好
+上手快
+
+#### tauri
+
+Tauri 是一个为所有主流桌面平台构建小型、快速二进制文件的框架。开发人员可以集成任何编译成 HTML、 JS 和 CSS
+的前端框架来构建他们的用户界面。应用程序的后端是一个 Rust 二进制文件，具有前端可以与之交互的 API。
+
+#### deno
+
+Deno 是一个 JavaScript / TypeScript 的运行时，它使用 V8 引擎和 Rust 编写。它内置了很多现代的特性，如异步
+操作、模块化、TypeScript 等等。Deno 也是一个安全的运行时，它默认不允许访问文件、网络、环境变量等等,完全兼容
+nodejs
+
+#### 软件架构
+
+软件架构说明
+
+#### 开发环境
+
+1：rust 最新版本
+2：开发工具 RustRover
+3: nodejs 最新版本18.0.0
+4：tauri-cli 最新版本 1.5
+
+### 使用说明
+
+1. 启动前端： 进入frontend目录，执行 pnpm install && pnpm run dev
+2. 构建tauri： 根目录下执行 cargo build
+3. 进入tauri-src目录运行： 执行 cargo run
+
+#### 参与贡献
+
+String <348040933@qq.com>
+交流群:435604279
+
+
+
