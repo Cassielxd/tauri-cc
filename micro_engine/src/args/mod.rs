@@ -94,7 +94,7 @@ pub fn npm_registry_default_url() -> &'static Url {
             }
         }
         //  https://registry.npmjs.org
-        Url::parse("https://npm.aliyun.com").unwrap()
+        Url::parse("https://registry.npm.taobao.org").unwrap()
     });
 
     &NPM_REGISTRY_DEFAULT_URL
