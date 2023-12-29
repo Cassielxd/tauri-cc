@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "A Tauri App"
 authors = ["String 348040933@qq.com"]
 license = ""
-repository = ""
+repository = "https://gitee.com/stringlxd/tauri-cc"
 default-run = "tauri-desktop"
 edition = "2021"
 
