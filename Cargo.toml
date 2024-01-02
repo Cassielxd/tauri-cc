@@ -3,7 +3,8 @@ resolver = "2"
 members = [
     "src-tauri",
     "micro_engine",
-    "ext/simple_http"
+    "ext/simple_http",
+    "ext/deno_tauri"
 ]
 
 [workspace.package]
@@ -39,6 +40,7 @@ handlebars = "4"
 deno_ast = { version = "0.31.6", features = ["transpiling"] }
 deno_core = { version = "0.232.0" }
 deno_runtime = { version = "0.135.0" }
+deno_broadcast_channel = { version = "0.121.0" }
 lazy-regex = "3"
 zstd = "=0.12.4"
 flate2 = { version = "1.0.26", default-features = false }
