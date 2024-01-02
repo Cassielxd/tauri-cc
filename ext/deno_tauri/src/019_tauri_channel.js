@@ -107,7 +107,7 @@ class TauriBroadcastChannel extends EventTarget {
   }
 
   postMessage(message) {
-    webidl.assertBranded(this, BroadcastChannelPrototype);
+    webidl.assertBranded(this, TauriBroadcastChannelPrototype);
 
     const prefix = "Failed to execute 'postMessage' on 'BroadcastChannel'";
     webidl.requiredArguments(arguments.length, 1, prefix);
@@ -150,7 +150,7 @@ class TauriBroadcastChannel extends EventTarget {
     return inspect(
       createFilteredInspectProxy({
         object: this,
-        evaluate: ObjectPrototypeIsPrototypeOf(BroadcastChannelPrototype, this),
+        evaluate: ObjectPrototypeIsPrototypeOf(TauriBroadcastChannelPrototype, this),
         keys: [
           "name",
           "onmessage",
@@ -164,6 +164,6 @@ class TauriBroadcastChannel extends EventTarget {
 
 defineEventHandler(TauriBroadcastChannel.prototype, "message");
 defineEventHandler(TauriBroadcastChannel.prototype, "messageerror");
-const BroadcastChannelPrototype = TauriBroadcastChannel.prototype;
+const TauriBroadcastChannelPrototype = TauriBroadcastChannel.prototype;
 
 export { TauriBroadcastChannel };

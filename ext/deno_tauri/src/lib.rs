@@ -7,7 +7,6 @@ use crate::in_memory_event_channel::{InMemoryBroadcastChannel, InMemoryBroadcast
 
 pub mod window;
 pub mod emit;
-pub mod event;
 pub mod in_memory_event_channel;
 
 
