@@ -3,7 +3,6 @@
 
 use tauri::Manager;
 use tauri_desktop::init_context;
-use tauri_desktop::plugins::server;
 
 #[tokio::main]
 async fn main() {
@@ -13,11 +12,11 @@ async fn main() {
             #[cfg(debug_assertions)] //仅在调试时自动打开开发者工具
             {
                 let main_window = app.get_window("main").unwrap();
-                main_window.main_window.open_devtools();
+                main_window.open_devtools();
             }
             Ok(())
         })
-        .plugin(server::init())
+        .plugin(tauri_plugin_http_server::init())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

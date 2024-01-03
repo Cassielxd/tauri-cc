@@ -1,0 +1,21 @@
+[package]
+name = "tauri-plugin-http-server"
+version = "0.1.0"
+authors = [ "You" ]
+description = ""
+edition = "2021"
+rust-version = "1.60"
+exclude = ["/examples"]
+
+[dependencies]
+serde_json = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+tauri = { workspace = true, features = [] }
+axum = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+simple_http = { workspace = true }
+micro_engine = { workspace = true }
+
+lazy_static = "1"
+async-channel = { workspace = true }
+futures = "0.3.28"

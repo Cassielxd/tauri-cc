@@ -1,3 +1,11 @@
+#[macro_use]
+extern crate lazy_static;
+use tauri::{Manager, plugin::{Builder, TauriPlugin}, Runtime};
+use std::net::SocketAddr;
+use std::str::FromStr;
+use axum::Router;
+use simple_http::default_router;
+
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -13,9 +21,8 @@ use micro_engine::deno_runtime::deno_core::{v8};
 use micro_engine::deno_runtime::deno_core::error::AnyError;
 
 pub type MainWorkersTable = HashMap<String, MainWorkerThread>;
-lazy_static! {
-  pub static ref MAIN_WORKER_STABLE: Mutex<MainWorkersTable> =Mutex::new(HashMap::new());
-}
+#[derive(Clone)]
+pub struct WorkersTableManager(pub Arc<Mutex<MainWorkersTable>>);
 
 #[derive(Clone)]
 pub struct MainWorkerHandle {
@@ -77,9 +84,8 @@ impl Drop for MainWorkerThread {
 REQUEST_CHANNEL主要用于 web 默认路由不存在
 向jsruntime 发送request使用
 */
-
 //初始化脚本引擎
-pub fn init_engine(key: String) -> Result<(), AnyError> {
+pub fn init_engine() -> Result<MainWorkerThread, AnyError> {
     // 创建一个用于线程间通信的同步通道
     let (handle_sender, handle_receiver) = std::sync::mpsc::sync_channel::<
         Result<MainWorkerHandle, AnyError>,
@@ -138,18 +144,39 @@ pub fn init_engine(key: String) -> Result<(), AnyError> {
     let worker_thread = MainWorkerThread {
         worker_handle: worker_handle.into()
     };
-    let mut stable = MAIN_WORKER_STABLE.lock().unwrap();
-    stable.insert(key, worker_thread);
-    Ok(())
+    Ok(worker_thread)
 }
 
-#[allow(dead_code)]
-pub fn stop_engine() {
-    let mut stable = MAIN_WORKER_STABLE.lock().unwrap();
-    if let Some(worker_thread) = stable.remove(&*"default".to_string()) {
+#[tauri::command]
+fn restart_engine<R: Runtime>(app: tauri::AppHandle<R>) {
+    let main_worker_stable = app.state::<WorkersTableManager>();
+    let mut stable = main_worker_stable.0.lock().unwrap();
+    if let Some(worker_thread) = stable.remove(&"default".to_string()) {
+        stable.insert("default".to_string(),init_engine().unwrap());
         drop(worker_thread);
     } else {
-        println!("default engine not found")
+        println!(" engine not found");
     }
 }
 
+
+
+/// Initializes the plugin.
+pub fn init<R: Runtime>() -> TauriPlugin<R> {
+  Builder::new("http-server")
+      .invoke_handler(tauri::generate_handler![restart_engine])
+      .setup(|handle| {
+         let handle_ref= handle.clone();
+         let mut map = HashMap::new();
+          map.insert("default".to_string(),init_engine().unwrap());
+          handle.manage(WorkersTableManager(Arc::new(Mutex::new(map))));
+         tokio::task::spawn(async {
+          let mut addr = SocketAddr::from_str("127.0.0.1:20003").unwrap();
+          println!(" - Local:   http://{}", addr.clone());
+          let app = Router::new().fallback(default_router).with_state(handle_ref);
+          axum::Server::bind(&addr).serve(app.into_make_service()).await.unwrap();
+        });
+        Ok(())
+      })
+      .build()
+}

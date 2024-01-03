@@ -32,13 +32,12 @@ pub fn emit_all(state: &mut OpState,
                 #[buffer] buf: JsBuffer, ) -> Result<(), AnyError> {
     let app_handle = state.borrow::<AppHandle>();
 
-    let data = serde_json::from_slice::<serde_json::Value>(&buf.clone().to_vec()).unwrap();
+    let data = serde_json::from_slice::<Value>(&buf.clone().to_vec()).unwrap();
     {
         let bc = app_handle.state::<InMemoryBroadcastChannel>().clone();
         let resource = state.resource_table.get::<InMemoryBroadcastChannelResource>(rid)?;
         let _ = bc.send(&resource, name.clone(), buf.to_vec());
     }
     let _ = app_handle.emit_all(&name, &data);
-
     Ok(())
 }

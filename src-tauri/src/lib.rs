@@ -1,10 +1,8 @@
-#[macro_use]
-extern crate lazy_static;
+
 #[macro_use]
 extern crate getset;
 
 pub mod initialize;
-pub mod plugins;
 pub mod config;
 
 use std::sync::{Arc, Mutex};

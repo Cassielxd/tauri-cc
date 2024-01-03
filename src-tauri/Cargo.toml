@@ -23,12 +23,8 @@ clap = { workspace = true, features = ["derive", "env"] }
 toml = "0.8.1"
 state = "0.5"
 getset = "0.1"
-lazy_static = "1"
-async-channel = { workspace = true }
-futures = "0.3.28"
 log = { workspace = true }
 fast_log = { workspace = true }
-simple_http = { workspace = true }
-micro_engine = { workspace = true }
+tauri-plugin-http-server ={ workspace = true }
 [features]
 custom-protocol = ["tauri/custom-protocol"]
