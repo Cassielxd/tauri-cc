@@ -1,5 +1,3 @@
-#[macro_use]
-extern crate lazy_static;
 use tauri::{Manager, plugin::{Builder, TauriPlugin}, Runtime};
 use std::net::SocketAddr;
 use std::str::FromStr;
@@ -171,7 +169,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
           map.insert("default".to_string(),init_engine().unwrap());
           handle.manage(WorkersTableManager(Arc::new(Mutex::new(map))));
          tokio::task::spawn(async {
-          let mut addr = SocketAddr::from_str("127.0.0.1:20003").unwrap();
+          let  addr = SocketAddr::from_str("127.0.0.1:20003").unwrap();
           println!(" - Local:   http://{}", addr.clone());
           let app = Router::new().fallback(default_router).with_state(handle_ref);
           axum::Server::bind(&addr).serve(app.into_make_service()).await.unwrap();
