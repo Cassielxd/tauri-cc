@@ -24,7 +24,7 @@ use tokio::select;
 pub type MainWorkersTable = HashMap<String, MainWorkerThread>;
 
 #[derive(Clone)]
-pub struct WorkersTableManager(pub Arc<Mutex<MainWorkersTable>>);
+pub struct WorkersTableManager(pub Arc<Mutex<MainWorkerThread>>);
 
 #[derive(Clone)]
 pub struct MainWorkerHandle {
@@ -145,15 +145,12 @@ pub fn init_engine() -> Result<MainWorkerThread, AnyError> {
 }
 
 #[tauri::command]
-fn restart_engine<R: Runtime>(app: tauri::AppHandle<R>) {
+async fn restart_engine<R: Runtime>(app: tauri::AppHandle<R>) {
+    println!("restart_engine");
     let main_worker_stable = app.state::<WorkersTableManager>();
     let mut stable = main_worker_stable.0.lock().unwrap();
-    if let Some(worker_thread) = stable.remove(&"default".to_string()) {
-        stable.insert("default".to_string(), init_engine().unwrap());
-        drop(worker_thread);
-    } else {
-        println!(" engine not found");
-    }
+    *stable = init_engine().unwrap();
+    app.emit_all("runtimeRestart", ());
 }
 
 async fn run<R: Runtime>(handle_ref: tauri::AppHandle<R>) {
@@ -169,9 +166,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
         .invoke_handler(tauri::generate_handler![restart_engine])
         .setup(|handle| {
             let handle_ref = handle.clone();
-            let mut map = HashMap::new();
-            map.insert("default".to_string(), init_engine().unwrap());
-            handle.manage(WorkersTableManager(Arc::new(Mutex::new(map))));
+            handle.manage(WorkersTableManager(Arc::new(Mutex::new(init_engine().unwrap()))));
             tokio::task::spawn(run(handle_ref));
             Ok(())
         })
