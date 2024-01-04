@@ -377,4 +377,3 @@ pub async fn collect_tsc(specifier: &ModuleSpecifier, code_lens_settings: &CodeL
   });
   Ok(Rc::try_unwrap(code_lenses).unwrap().into_inner())
 }
-

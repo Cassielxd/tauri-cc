@@ -644,4 +644,3 @@ fn create_web_worker_callback(shared: Arc<SharedWorkerState>, stdio: deno_runtim
     WebWorker::bootstrap_from_options(args.name, args.permissions, args.main_module, args.worker_id, options)
   })
 }
-

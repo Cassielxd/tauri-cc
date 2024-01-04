@@ -87,5 +87,3 @@ fn match_options() -> glob::MatchOptions {
     require_literal_leading_dot: true,
   }
 }
-
-

@@ -419,4 +419,3 @@ fn is_in_path(dir: &Path) -> bool {
   }
   false
 }
-

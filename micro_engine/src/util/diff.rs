@@ -151,4 +151,3 @@ fn fmt_rem_text(x: &str) -> String {
 fn fmt_rem_text_highlight(x: &str) -> String {
   colors::white_on_red(x).to_string()
 }
-

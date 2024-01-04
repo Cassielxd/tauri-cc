@@ -691,4 +691,3 @@ impl Matcher {
     Some(MatchResult { path, index, params })
   }
 }
-

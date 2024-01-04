@@ -48,5 +48,3 @@ fn is_process_active(process_id: u32) -> bool {
     result
   }
 }
-
-

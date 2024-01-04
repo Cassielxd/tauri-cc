@@ -51,4 +51,3 @@ fn export_specifier_has_default(s: &ExportSpecifier) -> bool {
     }
   }
 }
-

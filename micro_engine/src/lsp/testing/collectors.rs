@@ -485,4 +485,3 @@ impl Visit for TestCollector {
     self.fns.insert(n.ident.sym.to_string(), *n.function.clone());
   }
 }
-

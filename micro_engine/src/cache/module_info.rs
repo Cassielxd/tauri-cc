@@ -49,11 +49,9 @@ pub struct ModuleInfoCache {
 }
 
 impl ModuleInfoCache {
-
   pub fn new(conn: CacheDB) -> Self {
     Self { conn }
   }
-
 
   pub fn get_module_info(&self, specifier: &ModuleSpecifier, media_type: MediaType, expected_source_hash: &str) -> Result<Option<ModuleInfo>, AnyError> {
     let query = SELECT_MODULE_INFO;
@@ -136,5 +134,3 @@ fn serialize_media_type(media_type: MediaType) -> &'static str {
     Unknown => "16",
   }
 }
-
-

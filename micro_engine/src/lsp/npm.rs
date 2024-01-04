@@ -84,5 +84,3 @@ fn parse_npm_search_response(source: &str) -> Result<Vec<String>, AnyError> {
   let objects = serde_json::from_str::<Response>(source)?.objects;
   Ok(objects.into_iter().map(|o| o.package.name).collect())
 }
-
-

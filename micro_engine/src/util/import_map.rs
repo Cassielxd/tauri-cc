@@ -69,7 +69,6 @@ impl ImportMapUnfurler {
     }
     Ok(deno_ast::apply_text_changes(parsed_source.text_info().text_str(), text_changes).into_bytes())
   }
-
 }
 
 fn to_range(parsed_source: &ParsedSource, range: &deno_graph::PositionRange) -> std::ops::Range<usize> {
@@ -83,4 +82,3 @@ fn to_range(parsed_source: &ParsedSource, range: &deno_graph::PositionRange) -> 
   }
   range
 }
-

@@ -224,8 +224,6 @@ impl fmt::Display for Diagnostic {
 pub struct Diagnostics(Vec<Diagnostic>);
 
 impl Diagnostics {
-
-
   /// Return a set of diagnostics where only the values where the predicate
   /// returns `true` are included.
   pub fn filter<P>(&self, predicate: P) -> Self
@@ -280,4 +278,3 @@ impl fmt::Display for Diagnostics {
 }
 
 impl Error for Diagnostics {}
-

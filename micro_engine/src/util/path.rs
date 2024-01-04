@@ -199,4 +199,3 @@ pub fn root_url_to_safe_local_dirname(root: &ModuleSpecifier) -> PathBuf {
 
   result
 }
-

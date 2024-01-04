@@ -510,4 +510,3 @@ fn is_supported_ext_fmt(path: &Path) -> bool {
     false
   }
 }
-

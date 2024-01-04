@@ -3473,5 +3473,3 @@ fn request(runtime: &mut JsRuntime, state_snapshot: Arc<StateSnapshot>, request:
     Err(custom_error("RequestError", "The response was not received for the request."))
   }
 }
-
-

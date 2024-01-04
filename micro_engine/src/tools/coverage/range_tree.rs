@@ -10,7 +10,6 @@ use typed_arena::Arena;
 pub struct RangeTreeArena<'a>(Arena<RangeTree<'a>>);
 
 impl<'a> RangeTreeArena<'a> {
-
   pub fn with_capacity(n: usize) -> Self {
     RangeTreeArena(Arena::with_capacity(n))
   }
@@ -143,5 +142,3 @@ impl<'rt> RangeTree<'rt> {
     Some(rta.alloc(RangeTree::new(start, end, delta, children)))
   }
 }
-
-

@@ -1215,5 +1215,3 @@ fn start_output_redirect_thread(mut pipe_reader: os_pipe::PipeReader, sender: Un
     }
   });
 }
-
-

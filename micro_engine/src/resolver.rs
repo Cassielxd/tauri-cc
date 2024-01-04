@@ -357,5 +357,3 @@ impl NpmResolver for CliGraphResolver {
     self.bare_node_builtins_enabled
   }
 }
-
-

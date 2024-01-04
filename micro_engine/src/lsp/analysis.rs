@@ -752,4 +752,3 @@ pub fn source_range_to_lsp_range(range: &SourceRange, source_text_info: &SourceT
     },
   }
 }
-

@@ -514,4 +514,3 @@ fn join_package_name(path: &Path, package_name: &str) -> PathBuf {
   }
   path
 }
-

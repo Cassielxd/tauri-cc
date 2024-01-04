@@ -571,4 +571,3 @@ async fn fetch_once<'a>(http_client: &HttpClient, args: FetchOnceArgs<'a>) -> Re
 
   Ok(FetchOnceResult::Code(body, result_headers))
 }
-

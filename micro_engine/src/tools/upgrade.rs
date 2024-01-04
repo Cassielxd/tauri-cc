@@ -621,5 +621,3 @@ impl CheckVersionFile {
     Self { last_prompt: dt, ..self }
   }
 }
-
-

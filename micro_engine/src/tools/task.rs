@@ -245,4 +245,3 @@ fn resolve_npm_commands(npm_resolver: &ManagedCliNpmResolver, node_resolver: &No
   }
   Ok(result)
 }
-

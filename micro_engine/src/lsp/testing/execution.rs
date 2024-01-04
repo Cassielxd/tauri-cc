@@ -604,4 +604,3 @@ impl LspTestReporter {
     // there is nothing to do on report_summary
   }
 }
-

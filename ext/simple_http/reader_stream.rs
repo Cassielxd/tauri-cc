@@ -57,4 +57,3 @@ impl<R: AsyncRead> Stream for ExternallyAbortableReaderStream<R> {
     }
   }
 }
-

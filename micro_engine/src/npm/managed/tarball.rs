@@ -108,4 +108,3 @@ fn extract_tarball(data: &[u8], output_folder: &Path) -> Result<(), AnyError> {
   }
   Ok(())
 }
-

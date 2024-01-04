@@ -1114,4 +1114,3 @@ fn generate_deno_diagnostics(snapshot: &language_server::StateSnapshot, config: 
 
   diagnostics_vec
 }
-

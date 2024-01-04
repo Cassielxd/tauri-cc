@@ -160,4 +160,3 @@ fn get_os_specific_filepath(output: PathBuf, target: &Option<String>) -> PathBuf
     output
   }
 }
-

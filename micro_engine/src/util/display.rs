@@ -76,4 +76,3 @@ where
   writeln!(&mut writer)?;
   Ok(())
 }
-

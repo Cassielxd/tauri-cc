@@ -218,5 +218,3 @@ fn build_proxy_module_source(module: &EsmModule, proxied_module: &ProxiedModule,
 
   Ok(text)
 }
-
-

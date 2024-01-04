@@ -114,4 +114,3 @@ fn get_elapsed_text(elapsed: Duration) -> String {
   let minutes = elapsed_secs / 60;
   format!("[{minutes:0>2}:{seconds:0>2}]")
 }
-

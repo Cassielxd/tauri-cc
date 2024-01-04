@@ -180,4 +180,3 @@ impl SqlIncrementalCache {
     Ok(())
   }
 }
-

@@ -61,4 +61,3 @@ pub fn is_remote_specifier_text(text: &str) -> bool {
 pub fn sanitize_filepath(text: &str) -> String {
   text.chars().map(|c| if is_banned_path_char(c) { '_' } else { c }).collect()
 }
-

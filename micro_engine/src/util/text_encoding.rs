@@ -75,4 +75,3 @@ pub fn code_without_source_map(mut code: ModuleCode) -> ModuleCode {
   }
   code
 }
-

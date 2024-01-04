@@ -1600,4 +1600,3 @@ fn sort_and_remove_non_leaf_dirs(mut dirs: Vec<PathBuf>) -> Vec<PathBuf> {
 
   dirs
 }
-

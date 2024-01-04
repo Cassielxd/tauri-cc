@@ -89,7 +89,6 @@ impl Default for Performance {
 }
 
 impl Performance {
-
   /// Return an iterator which provides the names, count, and average duration
   /// of each measurement.
   pub fn averages(&self) -> Vec<PerformanceAverage> {
@@ -179,4 +178,3 @@ impl Performance {
     measures.iter().cloned().collect()
   }
 }
-

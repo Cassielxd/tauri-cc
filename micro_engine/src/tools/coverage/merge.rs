@@ -339,4 +339,3 @@ fn merge_children_lists<'a>(a: Vec<&'a mut RangeTree<'a>>, b: Vec<&'a mut RangeT
 
   merged
 }
-

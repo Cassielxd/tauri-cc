@@ -204,7 +204,6 @@ impl HttpClient {
     }
   }
 
-
   pub(crate) fn client(&self) -> Result<&reqwest::Client, AnyError> {
     self.cell.get_or_try_init(|| {
       create_http_client(
@@ -305,4 +304,3 @@ pub async fn get_response_body_with_progress(response: reqwest::Response, progre
   let bytes = response.bytes().await?;
   Ok(bytes.into())
 }
-

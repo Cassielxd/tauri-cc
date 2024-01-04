@@ -32,7 +32,6 @@ mod import_map;
 mod mappings;
 mod specifiers;
 
-
 pub async fn vendor(flags: Flags, vendor_flags: VendorFlags) -> Result<(), AnyError> {
   let mut cli_options = CliOptions::from_flags(flags)?;
   let raw_output_dir = match &vendor_flags.output_path {
@@ -289,4 +288,3 @@ fn is_dir_empty(dir_path: &Path) -> Result<bool, AnyError> {
 fn resolve_entry_points(flags: &VendorFlags, initial_cwd: &Path) -> Result<Vec<ModuleSpecifier>, AnyError> {
   flags.specifiers.iter().map(|p| resolve_url_or_path(p, initial_cwd).map_err(|e| e.into())).collect::<Result<Vec<_>, _>>()
 }
-

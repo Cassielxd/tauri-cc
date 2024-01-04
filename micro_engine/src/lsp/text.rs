@@ -232,4 +232,3 @@ pub fn get_edits(a: &str, b: &str, line_index: &LineIndex) -> Vec<TextEdit> {
 
   text_edits
 }
-

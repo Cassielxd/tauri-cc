@@ -114,4 +114,3 @@ impl DiskCache {
     atomic_write_file(&path, data, CACHE_PERM)
   }
 }
-

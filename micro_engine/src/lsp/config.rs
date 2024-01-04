@@ -731,7 +731,6 @@ impl Config {
     }
   }
 
-
   pub fn set_workspace_settings(&mut self, unscoped: WorkspaceSettings, by_workspace_folder: Option<BTreeMap<ModuleSpecifier, WorkspaceSettings>>) {
     self.settings.set_unscoped(unscoped);
     self.settings.set_for_workspace_folders(by_workspace_folder);
@@ -1021,4 +1020,3 @@ fn resolve_lockfile_from_path(lockfile_path: PathBuf) -> Option<Lockfile> {
     }
   }
 }
-

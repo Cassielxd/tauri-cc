@@ -478,5 +478,3 @@ fn get_workspace_completions(specifier: &ModuleSpecifier, current: &str, range: 
     })
     .collect()
 }
-
-

@@ -652,4 +652,3 @@ fn workspace_member_config_try_into_workspace_member(config: &deno_config::Works
       .collect(),
   })
 }
-

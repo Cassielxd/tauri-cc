@@ -121,4 +121,3 @@ pub fn discover_from(start: &Path, maybe_stop_at: Option<PathBuf>) -> Result<Opt
   log::debug!("No package.json file found");
   Ok(None)
 }
-

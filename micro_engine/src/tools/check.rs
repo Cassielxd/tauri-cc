@@ -369,4 +369,3 @@ fn get_leading_comments(file_text: &str) -> Vec<String> {
   }
   results
 }
-

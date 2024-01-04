@@ -454,5 +454,3 @@ pub fn get_configured_rules(rules: LintRulesConfig) -> Vec<&'static dyn LintRule
     rules::get_filtered_rules(rules.tags.or_else(|| Some(vec!["recommended".to_string()])), rules.exclude, rules.include)
   }
 }
-
-

@@ -129,8 +129,6 @@ impl CacheDB {
     new
   }
 
-
-
   fn spawn_eager_init_thread(&self) {
     let clone = self.clone();
     debug_assert!(tokio::runtime::Handle::try_current().is_ok());
@@ -261,8 +259,6 @@ impl CacheDB {
     }
   }
 
-
-
   pub fn execute(&self, sql: &'static str, params: impl Params) -> Result<usize, AnyError> {
     self.with_connection(|conn| {
       let mut stmt = conn.prepare_cached(sql)?;
@@ -297,4 +293,3 @@ impl CacheDB {
     Ok(res)
   }
 }
-

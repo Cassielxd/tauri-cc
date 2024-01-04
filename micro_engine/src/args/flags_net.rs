@@ -51,6 +51,3 @@ pub fn parse(paths: Vec<String>) -> clap::error::Result<Vec<String>> {
   }
   Ok(out)
 }
-
-
-

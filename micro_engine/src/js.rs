@@ -17,4 +17,3 @@ pub fn deno_isolate_init() -> Option<Snapshot> {
     None
   }
 }
-

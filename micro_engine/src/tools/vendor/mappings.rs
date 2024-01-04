@@ -158,5 +158,3 @@ fn path_with_extension(path: &Path, new_ext: &str) -> PathBuf {
   }
   path.with_extension(new_ext)
 }
-
-

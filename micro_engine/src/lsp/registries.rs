@@ -433,8 +433,6 @@ impl ModuleRegistry {
     Ok(())
   }
 
-
-
   pub async fn get_hover(&self, dependency: &Dependency) -> Option<String> {
     let maybe_code = dependency.get_code();
     let maybe_type = dependency.get_type();
@@ -788,4 +786,3 @@ impl ModuleRegistry {
     Some(items)
   }
 }
-

@@ -117,4 +117,3 @@ fn compute_emit_hash(bytes: &[u8], cli_version: &str) -> String {
     .finish()
     .to_string()
 }
-
