@@ -153,21 +153,24 @@ async fn restart_engine<R: Runtime>(app: tauri::AppHandle<R>) {
     app.emit_all("runtimeRestart", ());
 }
 
-async fn run<R: Runtime>(handle_ref: tauri::AppHandle<R>) {
-    let addr = SocketAddr::from_str("127.0.0.1:20004").unwrap();
-    println!(" - Local:   http://{}", addr.clone());
+async fn run<R: Runtime>(handle_ref: tauri::AppHandle<R>, addr: Option<SocketAddr>) {
+    let address = match addr {
+        Some(a) => a,
+        None => SocketAddr::from_str("127.0.0.1:20004").unwrap()
+    };
+    println!(" - Local:   http://{}", address.clone());
     let app = Router::new().fallback(default_router).with_state(handle_ref);
-    axum::Server::bind(&addr).serve(app.into_make_service()).await.unwrap();
+    axum::Server::bind(&address).serve(app.into_make_service()).await.unwrap();
 }
 
 /// Initializes the plugin.
-pub fn init<R: Runtime>() -> TauriPlugin<R> {
+pub fn init<R: Runtime>(addr: Option<SocketAddr>) -> TauriPlugin<R> {
     Builder::new("http-server")
         .invoke_handler(tauri::generate_handler![restart_engine])
-        .setup(|handle| {
+        .setup(move |handle| {
             let handle_ref = handle.clone();
             handle.manage(WorkersTableManager(Arc::new(Mutex::new(init_engine().unwrap()))));
-            tokio::task::spawn(run(handle_ref));
+            tokio::task::spawn(run(handle_ref, addr));
             Ok(())
         })
         .build()
