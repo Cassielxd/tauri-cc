@@ -1,5 +1,4 @@
 use axum::Router;
-use simple_http::default_router;
 use std::net::SocketAddr;
 use std::str::FromStr;
 use tauri::{
@@ -19,12 +18,37 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
-use tokio::select;
+use std::time::Duration;
+use axum::body::Body;
+use axum::http::{Request, Response, StatusCode};
+use tokio::{select, time};
+use simple_http::{HttpReceiver, HttpSender, RequestContext};
+use state::Container;
+use tokio::sync::mpsc;
 
-pub type MainWorkersTable = HashMap<String, MainWorkerThread>;
+pub static APPLICATION_CONTEXT: Container![Send + Sync] = <Container![Send + Sync]>::new();
 
 #[derive(Clone)]
-pub struct WorkersTableManager(pub Arc<Mutex<MainWorkerThread>>);
+pub struct WorkersTableManager {
+    pub main_worker_thread: Arc<Mutex<MainWorkerThread>>,
+    pub request_channel: (HttpSender, HttpReceiver),
+    pub main_nodule: String,
+}
+
+impl WorkersTableManager {
+    pub fn restart(self) {
+        let mut stable = self.main_worker_thread.lock().unwrap();
+        *stable = MainWorkerThread::new(self.main_nodule.clone(), self.request_channel.1.clone());
+    }
+    pub fn new(main_nodule: String) -> Self {
+        let request_channel = async_channel::unbounded::<RequestContext>();
+        WorkersTableManager {
+            main_worker_thread: Arc::new(Mutex::new(MainWorkerThread::new(main_nodule.clone(), request_channel.1.clone()))),
+            main_nodule,
+            request_channel,
+        }
+    }
+}
 
 #[derive(Clone)]
 pub struct MainWorkerHandle {
@@ -36,7 +60,7 @@ pub struct MainWorkerHandle {
     // 是否已经终止，使用Arc来实现共享和同步访问
     terminate_waker: Arc<AtomicWaker>,
     // 终止唤醒器，使用Arc来实现共享和同步访问
-    isolate_handle: v8::IsolateHandle, // JavaScript Isolate 的句柄
+    isolate_handle: v8::IsolateHandle,   // JavaScript Isolate 的句柄
 }
 
 impl MainWorkerHandle {
@@ -74,6 +98,65 @@ pub struct MainWorkerThread {
     worker_handle: MainWorkerHandle,
 }
 
+impl MainWorkerThread {
+    fn new(main_path: String, recever: HttpReceiver) -> MainWorkerThread {
+        // 创建一个用于线程间通信的同步通道
+        let (handle_sender, handle_receiver) = std::sync::mpsc::sync_channel::<Result<MainWorkerHandle, AnyError>>(1);
+        // 创建一个线程，并为其命名
+        let build = thread::Builder::new().name(format!("js-engine"));
+        // 隐藏的线程任务，用于执行JavaScript引擎的初始化和运行"resource/main.ts".into()
+        let _ = build.spawn(|| {
+            let args = vec!["".into(), "run".into(), main_path];
+            // 将args转换为flagset
+            let flags = flags_from_vec(args).unwrap();
+            let future = async {
+                let factory = CliFactory::from_flags(flags).await.unwrap();
+                let cli_options = factory.cli_options();
+                // 解析主模块
+                let main_module = cli_options.resolve_main_module().unwrap();
+                // 运行npm install
+                maybe_npm_install(&factory).await.unwrap();
+                // 创建CLI主工作线程工厂实例
+                let worker_factory = factory.create_cli_main_worker_factory().await.unwrap();
+                // 创建自定义工作线程实例
+                let mut worker = worker_factory
+                    .create_custom_worker(main_module, PermissionsContainer::allow_all(), vec![simple_http::simple_http::init_ops_and_esm(recever)], Default::default())
+                    .await
+                    .unwrap();
+                // 获取工作线程的JavaScript运行时线程安全句柄
+                let handle = worker.worker.js_runtime.v8_isolate().thread_safe_handle();
+                let (sender, receiver) = async_channel::bounded::<u8>(1);
+                // 创建一个MainWorkerHandle实例
+                let external_handle = MainWorkerHandle {
+                    sender,
+                    termination_signal: Arc::new(AtomicBool::new(false)),
+                    has_terminated: Arc::new(AtomicBool::new(false)),
+                    terminate_waker: Arc::new(AtomicWaker::new()),
+                    isolate_handle: handle,
+                };
+                // 发送MainWorkerHandle实例到handle_sender通道
+                handle_sender.send(Ok(external_handle)).unwrap();
+                drop(handle_sender);
+                // 选择执行不同的分支 有一个返回线程结束
+                select! {
+          res = receiver.recv() => {
+            println!("结束了{:?}",res);
+          }
+          code = worker.run() => {
+            println!("run {:?}",code);
+           }
+        }
+            };
+            // 创建并运行当前线程
+            create_and_run_current_thread(future);
+        });
+        // 获取handle_receiver通道接收到的值，即MainWorkerHandle实例
+        let worker_handle = handle_receiver.recv().unwrap().unwrap();
+        // 创建MainWorkerThread实例
+        MainWorkerThread { worker_handle: worker_handle.into() }
+    }
+}
+
 impl Drop for MainWorkerThread {
     fn drop(&mut self) {
         self.worker_handle.clone().terminate();
@@ -81,75 +164,11 @@ impl Drop for MainWorkerThread {
     }
 }
 
-/*
-REQUEST_CHANNEL主要用于 web 默认路由不存在
-向jsruntime 发送request使用
-*/
-//初始化脚本引擎
-pub fn init_engine() -> Result<MainWorkerThread, AnyError> {
-    // 创建一个用于线程间通信的同步通道
-    let (handle_sender, handle_receiver) = std::sync::mpsc::sync_channel::<Result<MainWorkerHandle, AnyError>>(1);
-    // 创建一个线程，并为其命名
-    let build = thread::Builder::new().name(format!("js-engine"));
-    // 隐藏的线程任务，用于执行JavaScript引擎的初始化和运行
-    let _ = build.spawn(|| {
-        let args = vec!["".into(), "run".into(), "resource/main.ts".into()];
-        // 将args转换为flagset
-        let flags = flags_from_vec(args).unwrap();
-        let future = async {
-            let factory = CliFactory::from_flags(flags).await.unwrap();
-            let cli_options = factory.cli_options();
-            // 解析主模块
-            let main_module = cli_options.resolve_main_module().unwrap();
-            // 运行npm install
-            maybe_npm_install(&factory).await.unwrap();
-            // 创建CLI主工作线程工厂实例
-            let worker_factory = factory.create_cli_main_worker_factory().await.unwrap();
-            // 创建自定义工作线程实例
-            let mut worker = worker_factory
-                .create_custom_worker(main_module, PermissionsContainer::allow_all(), vec![simple_http::simple_http::init_ops_and_esm()], Default::default())
-                .await
-                .unwrap();
-            // 获取工作线程的JavaScript运行时线程安全句柄
-            let handle = worker.worker.js_runtime.v8_isolate().thread_safe_handle();
-            let (sender, receiver) = async_channel::bounded::<u8>(1);
-            // 创建一个MainWorkerHandle实例
-            let external_handle = MainWorkerHandle {
-                sender,
-                termination_signal: Arc::new(AtomicBool::new(false)),
-                has_terminated: Arc::new(AtomicBool::new(false)),
-                terminate_waker: Arc::new(AtomicWaker::new()),
-                isolate_handle: handle,
-            };
-            // 发送MainWorkerHandle实例到handle_sender通道
-            handle_sender.send(Ok(external_handle)).unwrap();
-            drop(handle_sender);
-            // 选择执行不同的分支 有一个返回线程结束
-            select! {
-        res = receiver.recv() => {
-          println!("结束了{:?}",res);
-        }
-        code = worker.run() => {
-          println!("run {:?}",code);
-         }
-      }
-        };
-        // 创建并运行当前线程
-        create_and_run_current_thread(future);
-    });
-    // 获取handle_receiver通道接收到的值，即MainWorkerHandle实例
-    let worker_handle = handle_receiver.recv().unwrap().unwrap();
-    // 创建MainWorkerThread实例
-    let worker_thread = MainWorkerThread { worker_handle: worker_handle.into() };
-    Ok(worker_thread)
-}
-
 #[tauri::command]
 async fn restart_engine<R: Runtime>(app: tauri::AppHandle<R>) {
-    println!("restart_engine");
-    let main_worker_stable = app.state::<WorkersTableManager>();
-    let mut stable = main_worker_stable.0.lock().unwrap();
-    *stable = init_engine().unwrap();
+    let main_worker_stable = APPLICATION_CONTEXT.get::<WorkersTableManager>();
+    let mut stable = main_worker_stable.main_worker_thread.lock().unwrap();
+    *stable = MainWorkerThread::new(main_worker_stable.main_nodule.clone(), main_worker_stable.request_channel.1.clone());
     app.emit_all("runtimeRestart", ());
 }
 
@@ -163,13 +182,32 @@ async fn run<R: Runtime>(handle_ref: tauri::AppHandle<R>, addr: Option<SocketAdd
     axum::Server::bind(&address).serve(app.into_make_service()).await.unwrap();
 }
 
+pub async fn default_router(request: Request<Body>) -> Response<Body> {
+    let sender = APPLICATION_CONTEXT.get::<WorkersTableManager>().request_channel.0.clone();
+    let (_response_tx, mut response_rx) = mpsc::channel(1);
+    let _ = sender.send(RequestContext { request, response_tx: _response_tx.clone() }).await;
+    let sleep = time::sleep(Duration::from_secs(5));
+    tokio::pin!(sleep);
+    select! {
+      _ = &mut sleep => {
+        let mut res = Response::new(Body::from("operation timed out".to_string()));
+        *res.status_mut() = StatusCode::REQUEST_TIMEOUT;
+        return res;
+      }
+      Some(res) = response_rx.recv() => {
+         return res;
+      }
+  }
+}
+
+
 /// Initializes the plugin.
-pub fn init<R: Runtime>(addr: Option<SocketAddr>) -> TauriPlugin<R> {
+pub fn init<R: Runtime>(addr: Option<SocketAddr>, main_module: String) -> TauriPlugin<R> {
     Builder::new("http-server")
         .invoke_handler(tauri::generate_handler![restart_engine])
         .setup(move |handle| {
             let handle_ref = handle.clone();
-            handle.manage(WorkersTableManager(Arc::new(Mutex::new(init_engine().unwrap()))));
+            APPLICATION_CONTEXT.set(WorkersTableManager::new(main_module));
             tokio::task::spawn(run(handle_ref, addr));
             Ok(())
         })

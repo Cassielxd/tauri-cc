@@ -1,7 +1,7 @@
 [package]
 name = "tauri-plugin-http-server"
 version = "0.1.0"
-authors = [ "You" ]
+authors = ["You"]
 description = ""
 edition = "2021"
 rust-version = "1.60"
@@ -19,3 +19,4 @@ micro_engine = { workspace = true }
 lazy_static = "1"
 async-channel = { workspace = true }
 futures = "0.3.28"
+state = "0.5"

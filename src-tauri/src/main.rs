@@ -16,7 +16,7 @@ async fn main() {
             }
             Ok(())
         })
-        .plugin(tauri_plugin_http_server::init(None))
+        .plugin(tauri_plugin_http_server::init(None, "resource/main.ts".into()))
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
