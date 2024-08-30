@@ -14,7 +14,7 @@ tauri = { workspace = true, features = [] }
 axum = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 simple_http = { workspace = true }
-micro_engine = { workspace = true }
+deno = { workspace = true }
 
 lazy_static = "1"
 async-channel = { workspace = true }

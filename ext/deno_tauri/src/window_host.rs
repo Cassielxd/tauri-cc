@@ -14,7 +14,7 @@ pub type WindowsTable = HashMap<String, TauriWindow>;
 deno_core::extension!(
   deno_tauri_window_host,
   ops = [create_window,close_window],
-  state = |state, options| {
+  state = |state| {
     state.put::<WindowsTable>(WindowsTable::default());
   },
 );

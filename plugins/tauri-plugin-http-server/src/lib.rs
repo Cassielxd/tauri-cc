@@ -7,13 +7,14 @@ use tauri::{
 };
 
 use futures::task::AtomicWaker;
-use micro_engine::args::flags_from_vec;
-use micro_engine::deno_runtime::deno_core::error::AnyError;
-use micro_engine::deno_runtime::deno_core::v8;
-use micro_engine::deno_runtime::permissions::PermissionsContainer;
-use micro_engine::deno_runtime::tokio_util::create_and_run_current_thread;
-use micro_engine::factory::CliFactory;
-use micro_engine::tools::run::maybe_npm_install;
+use deno::args::flags_from_vec;
+use deno::deno_runtime::deno_core::error::AnyError;
+use deno::deno_runtime::deno_core::v8;
+use deno::deno_runtime::WorkerExecutionMode;
+use deno::deno_runtime::deno_permissions::PermissionsContainer;
+use deno::deno_runtime::tokio_util::create_and_run_current_thread;
+use deno::factory::CliFactory;
+use deno::tools::run::maybe_npm_install;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -106,12 +107,12 @@ impl MainWorkerThread {
         let build = thread::Builder::new().name(format!("js-engine"));
         // 隐藏的线程任务，用于执行JavaScript引擎的初始化和运行"resource/main.ts".into()
         let _ = build.spawn(|| {
-            let args = vec!["".into(), "run".into(), main_path];
+            let args = vec!["".to_string().into(), "run".to_string().into(), main_path.into()];
             // 将args转换为flagset
-            let flags = flags_from_vec(args).unwrap();
+            let flags = Arc::new(flags_from_vec(args).unwrap());
             let future = async {
-                let factory = CliFactory::from_flags(flags).await.unwrap();
-                let cli_options = factory.cli_options();
+                let factory = CliFactory::from_flags(flags);
+                let cli_options = factory.cli_options().unwrap();
                 // 解析主模块
                 let main_module = cli_options.resolve_main_module().unwrap();
                 // 运行npm install
@@ -119,12 +120,12 @@ impl MainWorkerThread {
                 // 创建CLI主工作线程工厂实例
                 let worker_factory = factory.create_cli_main_worker_factory().await.unwrap();
                 // 创建自定义工作线程实例
-                let mut worker = worker_factory
-                    .create_custom_worker(main_module, PermissionsContainer::allow_all(), vec![simple_http::simple_http::init_ops_and_esm(recever)], Default::default())
+                let mut main_worker = worker_factory
+                    .create_custom_worker(WorkerExecutionMode::Run, main_module, PermissionsContainer::allow_all(), vec![simple_http::fake_http::init_ops_and_esm(recever)], Default::default())
                     .await
                     .unwrap();
                 // 获取工作线程的JavaScript运行时线程安全句柄
-                let handle = worker.worker.js_runtime.v8_isolate().thread_safe_handle();
+                let handle = main_worker.worker.js_runtime.v8_isolate().thread_safe_handle();
                 let (sender, receiver) = async_channel::bounded::<u8>(1);
                 // 创建一个MainWorkerHandle实例
                 let external_handle = MainWorkerHandle {
@@ -142,7 +143,7 @@ impl MainWorkerThread {
           res = receiver.recv() => {
             println!("结束了{:?}",res);
           }
-          code = worker.run() => {
+          code = main_worker.run() => {
             println!("run {:?}",code);
            }
         }
@@ -169,7 +170,7 @@ async fn restart_engine<R: Runtime>(app: tauri::AppHandle<R>) {
     let main_worker_stable = APPLICATION_CONTEXT.get::<WorkersTableManager>();
     let mut stable = main_worker_stable.main_worker_thread.lock().unwrap();
     *stable = MainWorkerThread::new(main_worker_stable.main_nodule.clone(), main_worker_stable.request_channel.1.clone());
-    app.emit_all("runtimeRestart", ());
+    let _ = app.emit_all("runtimeRestart", ());
 }
 
 async fn run<R: Runtime>(handle_ref: tauri::AppHandle<R>, addr: Option<SocketAddr>) {
@@ -192,10 +193,10 @@ pub async fn default_router(request: Request<Body>) -> Response<Body> {
       _ = &mut sleep => {
         let mut res = Response::new(Body::from("operation timed out".to_string()));
         *res.status_mut() = StatusCode::REQUEST_TIMEOUT;
-        return res;
+        res
       }
       Some(res) = response_rx.recv() => {
-         return res;
+         res
       }
   }
 }
