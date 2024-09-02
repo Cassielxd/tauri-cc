@@ -8,7 +8,6 @@ use tauri::{
 
 use futures::task::AtomicWaker;
 use deno::args::flags_from_vec;
-use deno::deno_runtime::deno_core::error::AnyError;
 use deno::deno_runtime::deno_core::v8;
 use deno::deno_runtime::WorkerExecutionMode;
 use deno::deno_runtime::deno_permissions::PermissionsContainer;
@@ -26,10 +25,10 @@ use axum::http::{Request, Response, StatusCode};
 use tokio::{select, time};
 use deno_fake_http::{HttpReceiver, HttpSender, RequestContext};
 use state::Container;
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, RwLock};
 
 pub static APPLICATION_CONTEXT: Container![Send + Sync] = <Container![Send + Sync]>::new();
-
+type WorkersTable = RwLock<HashMap<String, WorkersTableManager>>;
 #[derive(Clone)]
 pub struct WorkersTableManager {
     pub main_worker_thread: Arc<Mutex<MainWorkerThread>>,
@@ -185,7 +184,8 @@ async fn run<R: Runtime>(handle_ref: tauri::AppHandle<R>, addr: Option<SocketAdd
 }
 
 pub async fn default_router(request: Request<Body>) -> Response<Body> {
-    let sender = APPLICATION_CONTEXT.get::<WorkersTableManager>().request_channel.0.clone();
+    let worker_table = APPLICATION_CONTEXT.get::<WorkersTable>();
+    let sender = worker_table.read().await.get("main").unwrap().request_channel.0.clone();
     let (_response_tx, mut response_rx) = mpsc::channel(1);
     let _ = sender.send(RequestContext { request, response_tx: _response_tx.clone() }).await;
     let sleep = time::sleep(Duration::from_secs(5));
@@ -209,7 +209,11 @@ pub fn init<R: Runtime>(addr: Option<SocketAddr>, main_module: String) -> TauriP
         .invoke_handler(tauri::generate_handler![restart_engine])
         .setup(move |handle| {
             let handle_ref = handle.clone();
-            APPLICATION_CONTEXT.set(WorkersTableManager::new(main_module));
+            //
+            let mut map = HashMap::new();
+            map.insert("main".to_string(), WorkersTableManager::new(main_module.clone()));
+            let workers_table = WorkersTable::new(map);
+            APPLICATION_CONTEXT.set(workers_table);
             tokio::task::spawn(run(handle_ref, addr));
             Ok(())
         })

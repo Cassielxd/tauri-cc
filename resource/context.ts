@@ -1,5 +1,5 @@
 import { Args } from "./types.ts";
-import config from "./deno.json" assert { type: "json" };
+import config from "./deno.json" with  { type: "json" };
 import { loader } from "./loader.ts";
 import { buildRouter } from "./core.ts";
 
@@ -50,7 +50,7 @@ class Context {
     if (workspaces.length > 0) {
       for (let i = 0; i < workspaces.length; i++) {
         let worker = workspaces[i];
-        await loader(this.basePath + worker, filePathArr);
+        await loader(worker, this.basePath + worker, filePathArr);
       }
     }
     if (filePathArr.length == 0) return;
@@ -62,7 +62,7 @@ class Context {
         if (item.path.includes("service")) {
           this.addService(name, new Class(this));
         } else {
-          this.addRouter(buildRouter(name, Class));
+          this.addRouter(buildRouter(item.worker, name, Class));
           this.addController(name, new Class(this));
         }
       }
@@ -77,6 +77,7 @@ class Context {
     const ctx = this;
     (async () => {
       await ctx.loaderAndBuilder();
+      console.log(ctx);
       const { controller } = ctx;
       const httpconn = new Deno.FakeHttpConn(0);
       for await (const { request, respondWith } of httpconn) {

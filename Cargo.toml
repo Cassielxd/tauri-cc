@@ -3,7 +3,7 @@ resolver = "2"
 members = [
     "src-tauri",
     "ext/deno_tauri",
-    "plugins/tauri-plugin-http-server"
+    "plugins/tauri-plugin-deno"
 ]
 
 [workspace.package]
@@ -43,7 +43,7 @@ thiserror = "1.0.40"
 tokio-util = "0.7.4"
 uuid = { version = "1.3.0", features = ["v4"] }
 simple_http = { version = "0.1.0", path = "./ext/simple_http" }
-tauri-plugin-http-server = { version = "0.1.0", path = "./plugins/tauri-plugin-http-server" }
+tauri-plugin-deno = { version = "0.1.0", path = "plugins/tauri-plugin-deno" }
 deno = { version = "1.46.1", path = "D:/workspace/nodejs2024/deno/cli" }
 #deno = { git = "https://github.com/Cassielxd/deno.git", branch = "tauri_deno" }
 tauri = { version = "1", features = [] }
