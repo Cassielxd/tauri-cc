@@ -23,7 +23,7 @@ use std::time::Duration;
 use axum::body::Body;
 use axum::http::{Request, Response, StatusCode};
 use tokio::{select, time};
-use deno_fake_http::{HttpReceiver, HttpSender, RequestContext};
+use deno::deno_fake_http::{HttpReceiver, HttpSender, RequestContext};
 use state::Container;
 use tokio::sync::{mpsc, RwLock};
 

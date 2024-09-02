@@ -2,7 +2,6 @@
 resolver = "2"
 members = [
     "src-tauri",
-    "ext/deno_tauri",
     "plugins/tauri-plugin-deno"
 ]
 
@@ -32,8 +31,7 @@ num-bigint = { version = "0.4", features = ["rand"] }
 prost = "0.11"
 url = { version = "2.3.1", features = ["serde", "expose_internals"] }
 
-deno_web = { version = "0.197.0" }
-deno_core = { version = "0.306.0" }
+
 
 async-trait = "0.1.73"
 log = "=0.4.20"
@@ -42,7 +40,6 @@ ring = "^0.17.0"
 thiserror = "1.0.40"
 tokio-util = "0.7.4"
 uuid = { version = "1.3.0", features = ["v4"] }
-simple_http = { version = "0.1.0", path = "./ext/simple_http" }
 tauri-plugin-deno = { version = "0.1.0", path = "plugins/tauri-plugin-deno" }
 deno = { version = "1.46.1", path = "D:/workspace/nodejs2024/deno/cli" }
 #deno = { git = "https://github.com/Cassielxd/deno.git", branch = "tauri_deno" }
