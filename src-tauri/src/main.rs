@@ -16,7 +16,12 @@ async fn main() {
         }
         Ok(())
     });
-    build = build.plugin(tauri_plugin_deno::init(None, "resource/main.ts".into()));
+    let mut path = "./resource/main.ts";
+    #[cfg(debug_assertions)]
+    {
+        path = "./src-tauri/resource/main.ts";
+    }
+    build = build.plugin(tauri_plugin_deno::init(None, path.into()));
     build.run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

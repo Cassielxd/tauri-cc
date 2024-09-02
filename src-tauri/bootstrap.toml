@@ -1,0 +1,43 @@
+debug = true
+is_demo = true
+
+#JwtToken秘钥
+jwt_secret = "cassie_admin"
+#名称
+[server]
+host = "127.0.0.1"
+port = 9999
+
+[redis]
+host = "127.0.0.1"
+port = 6379
+
+[mongodb]
+host = "127.0.0.1"
+port = 27017
+
+
+#数据库地址
+[database]
+host = "127.0.0.1"
+port = 3306
+db = "low_code"
+username = "root"
+password = "root"
+
+[log]
+#日志文件存放目录
+log_dir = "target/logs/"
+#日志分割尺寸-单位KB,MB,GB
+log_temp_size = "100MB"
+#日志打包格式可选“”（空-不压缩）“gzip”（gz压缩包）“zip”（zip压缩包）“lz4”（lz4压缩包（非常快））
+log_pack_compress = "zip"
+#日志滚动保留-保留全部: All,按时间保留(秒): KeepTime(i64),按版本保留: KeepNum(i64)
+log_rolling_type = "KeepNum(20)"
+#日志等级-info,error,warn,debug,trace
+log_level = "info"
+
+#租户化配置
+[tenant]
+column = "agency_code"   #column租户化字段
+ignore_table = []
