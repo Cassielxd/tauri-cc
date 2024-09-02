@@ -18,12 +18,13 @@ use deno::tools::run::maybe_npm_install;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
+use std::sync::mpsc::sync_channel;
 use std::thread;
 use std::time::Duration;
 use axum::body::Body;
 use axum::http::{Request, Response, StatusCode};
 use tokio::{select, time};
-use simple_http::{HttpReceiver, HttpSender, RequestContext};
+use deno_fake_http::{HttpReceiver, HttpSender, RequestContext};
 use state::Container;
 use tokio::sync::mpsc;
 
@@ -102,12 +103,12 @@ pub struct MainWorkerThread {
 impl MainWorkerThread {
     fn new(main_path: String, recever: HttpReceiver) -> MainWorkerThread {
         // 创建一个用于线程间通信的同步通道
-        let (handle_sender, handle_receiver) = std::sync::mpsc::sync_channel::<Result<MainWorkerHandle, AnyError>>(1);
+        let (handle_sender, handle_receiver) = sync_channel::<MainWorkerHandle>(1);
         // 创建一个线程，并为其命名
         let build = thread::Builder::new().name(format!("js-engine"));
         // 隐藏的线程任务，用于执行JavaScript引擎的初始化和运行"resource/main.ts".into()
         let _ = build.spawn(|| {
-            let args = vec!["".to_string().into(), "run".to_string().into(), main_path.into()];
+            let args = vec!["".to_string().into(), "run".to_string().into(), "--unstable".to_string().into(), "--inspect".to_string().into(), main_path.into()];
             // 将args转换为flagset
             let flags = Arc::new(flags_from_vec(args).unwrap());
             let future = async {
@@ -118,10 +119,10 @@ impl MainWorkerThread {
                 // 运行npm install
                 maybe_npm_install(&factory).await.unwrap();
                 // 创建CLI主工作线程工厂实例
-                let worker_factory = factory.create_cli_main_worker_factory().await.unwrap();
+                let worker_factory = factory.create_cli_main_worker_factory_tauri(Some(recever)).await.unwrap();
                 // 创建自定义工作线程实例
                 let mut main_worker = worker_factory
-                    .create_custom_worker(WorkerExecutionMode::Run, main_module, PermissionsContainer::allow_all(), vec![simple_http::fake_http::init_ops_and_esm(recever)], Default::default())
+                    .create_main_worker(WorkerExecutionMode::Run, main_module, PermissionsContainer::allow_all())
                     .await
                     .unwrap();
                 // 获取工作线程的JavaScript运行时线程安全句柄
@@ -136,7 +137,7 @@ impl MainWorkerThread {
                     isolate_handle: handle,
                 };
                 // 发送MainWorkerHandle实例到handle_sender通道
-                handle_sender.send(Ok(external_handle)).unwrap();
+                handle_sender.send(external_handle).unwrap();
                 drop(handle_sender);
                 // 选择执行不同的分支 有一个返回线程结束
                 select! {
@@ -152,7 +153,7 @@ impl MainWorkerThread {
             create_and_run_current_thread(future);
         });
         // 获取handle_receiver通道接收到的值，即MainWorkerHandle实例
-        let worker_handle = handle_receiver.recv().unwrap().unwrap();
+        let worker_handle = handle_receiver.recv().unwrap();
         // 创建MainWorkerThread实例
         MainWorkerThread { worker_handle: worker_handle.into() }
     }

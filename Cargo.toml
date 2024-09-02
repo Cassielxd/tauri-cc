@@ -2,7 +2,6 @@
 resolver = "2"
 members = [
     "src-tauri",
-    "ext/simple_http",
     "ext/deno_tauri",
     "plugins/tauri-plugin-http-server"
 ]
