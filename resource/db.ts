@@ -2,7 +2,7 @@ import { Database, SQLite3Connector, Model, DataTypes } from "./orm/mod.ts";
 import { Data } from "./model/data.ts";
 
 const connector = new SQLite3Connector({
-  filepath: "local_storage.sqlite"
+  filepath: "./local_storage.sqlite"
 });
 
 const db = new Database(connector);

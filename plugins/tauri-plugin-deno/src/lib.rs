@@ -209,7 +209,7 @@ pub fn init<R: Runtime>(addr: Option<SocketAddr>, main_module: String) -> TauriP
         .invoke_handler(tauri::generate_handler![restart_engine])
         .setup(move |handle| {
             let handle_ref = handle.clone();
-            //
+            //resource/main.ts
             let mut map = HashMap::new();
             map.insert("main".to_string(), WorkersTableManager::new(main_module.clone()));
             let workers_table = WorkersTable::new(map);

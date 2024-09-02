@@ -35,7 +35,8 @@
         "signingIdentity": null
       },
       "resources": [
-        "../resource/*"
+        "../resource/*",
+        "../bootstrap.toml"
       ],
       "shortDescription": "",
       "targets": "all",
