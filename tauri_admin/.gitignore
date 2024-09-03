@@ -1,0 +1,27 @@
+node_modules
+.DS_Store
+
+# build files
+es/
+lib/
+dist/
+typings/
+
+_site
+package
+tmp*
+temp*
+coverage
+test-report.html
+.idea/
+yarn-error.log
+*.zip
+.history
+.stylelintcache
+
+.env.local
+.env.*.local
+
+# lock文件 请根据自身项目或团队需求选择具体的包管理工具 并移除具体的ignore的lock文件
+yarn.lock
+pnpm-lock.yaml

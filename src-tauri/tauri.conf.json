@@ -2,8 +2,8 @@
   "build": {
     "beforeBuildCommand": "",
     "beforeDevCommand": "",
-    "devPath": "http://localhost:1420",
-    "distDir": "../fronted/dist"
+    "devPath": "http://localhost:3002",
+    "distDir": "../tauri_admin/dist"
   },
   "package": {
     "productName": "tauri-cc",
