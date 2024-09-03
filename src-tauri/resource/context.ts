@@ -1,6 +1,5 @@
 import { Args } from "./types.ts";
 import config from "./deno.json" with  { type: "json" };
-import { loader } from "./loader.ts";
 import { buildRouter } from "./core.ts";
 
 class Context {
@@ -8,11 +7,6 @@ class Context {
   controller: { [key: string]: any } = {};
   routers: Map<string, any> = new Map();
   urlPatterns: Map<string, URLPattern> = new Map();
-  basePath: string = "";
-
-  constructor(basePath: string) {
-    this.basePath = basePath;
-  }
 
   addService(name: string, service: any) {
     this.service[`${name}`] = service;
@@ -45,39 +39,31 @@ class Context {
   }
 
   async loaderAndBuilder() {
-    const filePathArr: Array<any> = [];
+
     let { workspaces } = config;
-    if (workspaces.length > 0) {
-      for (let i = 0; i < workspaces.length; i++) {
-        let worker = workspaces[i];
-        await loader(worker, this.basePath + worker, filePathArr);
+    if (!workspaces) return;
+    for (let i = 0; i < workspaces.length; i++) {
+      try {
+        let item = workspaces[i];
+        let { controllers, services } = await import("./" + item + "/resource.ts");
+        controllers.forEach(({ name, ClassName }) => {
+          this.addRouter(buildRouter(item, name, ClassName));
+          this.addController(name, new ClassName(this));
+        });
+        services.forEach(({ name, ClassName }) => {
+          this.addService(name, new ClassName(this));
+        });
+      } catch (e) {
+        console.log(e);
       }
     }
-    if (filePathArr.length == 0) return;
-    try {
-      for (let i = 0; i < filePathArr.length; i++) {
-        let item = filePathArr[i];
-        let name = item.name.split(".")[0];
-        let { default: Class } = await import(item.path);
-        if (item.path.includes("service")) {
-          this.addService(name, new Class(this));
-        } else {
-          this.addRouter(buildRouter(item.worker, name, Class));
-          this.addController(name, new Class(this));
-        }
-      }
-    } catch (e) {
-      console.log(e);
-    } finally {
-      this.buildUrlPatterns();
-    }
+    this.buildUrlPatterns();
   }
 
   start() {
     const ctx = this;
     (async () => {
       await ctx.loaderAndBuilder();
-      console.log(ctx);
       const { controller } = ctx;
       const httpconn = new Deno.FakeHttpConn(0);
       for await (const { request, respondWith } of httpconn) {

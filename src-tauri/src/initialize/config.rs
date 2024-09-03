@@ -1,11 +1,11 @@
 use crate::config::config::ApplicationConfig;
 use crate::config::option::Opt;
-use crate::{AppContext, ApplicationContext};
+use crate::{APPLICATION_CONTEXT};
 use clap::Parser;
 use tokio::fs::read_to_string;
 
 pub async fn init_config() {
-    ApplicationContext::set_service(set_config().await);
+    APPLICATION_CONTEXT.set(set_config().await);
 }
 
 async fn set_config() -> ApplicationConfig {

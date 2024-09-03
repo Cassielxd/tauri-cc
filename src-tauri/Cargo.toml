@@ -24,6 +24,7 @@ toml = "0.8.1"
 state = "0.5"
 getset = "0.1"
 log = { workspace = true }
+anyhow = { workspace = true }
 fast_log = { workspace = true }
 tauri-plugin-deno = { workspace = true }
 [features]

@@ -1,29 +1,13 @@
 debug = true
 is_demo = true
-
+dev_code_path = "./src-tauri/resource/main.ts"
+pro_code_path = "./resource/main.ts"
 #JwtToken秘钥
 jwt_secret = "cassie_admin"
-#名称
+#本地服务
 [server]
-host = "127.0.0.1"
 port = 9999
 
-[redis]
-host = "127.0.0.1"
-port = 6379
-
-[mongodb]
-host = "127.0.0.1"
-port = 27017
-
-
-#数据库地址
-[database]
-host = "127.0.0.1"
-port = 3306
-db = "low_code"
-username = "root"
-password = "root"
 
 [log]
 #日志文件存放目录
@@ -36,8 +20,3 @@ log_pack_compress = "zip"
 log_rolling_type = "KeepNum(20)"
 #日志等级-info,error,warn,debug,trace
 log_level = "info"
-
-#租户化配置
-[tenant]
-column = "agency_code"   #column租户化字段
-ignore_table = []
