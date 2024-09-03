@@ -14,7 +14,7 @@ tauri = { workspace = true, features = [] }
 axum = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 #deno_fake_http = { version = "0.1.0", path = "D:/workspace/nodejs2024/deno/ext/fake_http" }
-deno = { workspace = true, features = ["hmr"] }
+deno_tauri = { workspace = true, features = ["hmr"] }
 
 lazy_static = "1"
 async-channel = { workspace = true }
