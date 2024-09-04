@@ -7,13 +7,13 @@ use tauri::{
 };
 
 use futures::task::AtomicWaker;
-use deno::args::flags_from_vec;
-use deno::deno_runtime::deno_core::v8;
-use deno::deno_runtime::WorkerExecutionMode;
-use deno::deno_runtime::deno_permissions::PermissionsContainer;
-use deno::deno_runtime::tokio_util::create_and_run_current_thread;
-use deno::factory::CliFactory;
-use deno::tools::run::maybe_npm_install;
+use deno_tauri::args::flags_from_vec;
+use deno_tauri::deno_runtime_tauri::deno_core::v8;
+use deno_tauri::deno_runtime_tauri::WorkerExecutionMode;
+use deno_tauri::deno_runtime_tauri::deno_permissions::PermissionsContainer;
+use deno_tauri::deno_runtime_tauri::tokio_util::create_and_run_current_thread;
+use deno_tauri::factory::CliFactory;
+use deno_tauri::tools::run::maybe_npm_install;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -24,11 +24,13 @@ use axum::body::Body;
 use axum::http::{Request, Response, StatusCode};
 use tokio::{select, time};
 use deno_tauri::deno_fake_http::{HttpReceiver, HttpSender, RequestContext};
+use serde::Deserialize;
+use serde::Serialize;
 use state::Container;
 use tokio::sync::{mpsc, RwLock};
 
 pub static APPLICATION_CONTEXT: Container![Send + Sync] = <Container![Send + Sync]>::new();
-type WorkersTable = RwLock<HashMap<String, WorkersTableManager>>;
+type WorkersTable = Mutex<HashMap<String, WorkersTableManager>>;
 #[derive(Clone)]
 pub struct WorkersTableManager {
     pub main_worker_thread: Arc<Mutex<MainWorkerThread>>,
@@ -164,13 +166,72 @@ impl Drop for MainWorkerThread {
         self.worker_handle.clone().sender.send_blocking(1).expect("error");
     }
 }
-
+#[derive(Serialize, Deserialize)]
+pub struct CommandStatus {
+    status: bool,
+    message: Option<String>,
+}
 #[tauri::command]
-async fn restart_engine<R: Runtime>(app: tauri::AppHandle<R>) {
-    let main_worker_stable = APPLICATION_CONTEXT.get::<WorkersTableManager>();
-    let mut stable = main_worker_stable.main_worker_thread.lock().unwrap();
-    *stable = MainWorkerThread::new(main_worker_stable.main_nodule.clone(), main_worker_stable.request_channel.1.clone());
-    let _ = app.emit_all("runtimeRestart", ());
+async fn start_engine<R: Runtime>(app: tauri::AppHandle<R>, key: String, path: String) -> CommandStatus {
+    let worker_table = APPLICATION_CONTEXT.get::<WorkersTable>();
+    let mut stable = worker_table.lock().unwrap();
+    if stable.contains_key(&key) {
+        return CommandStatus { status: false, message: Some(format!("worker {} Already exist", key)) };
+    }
+    stable.insert(key.clone(), WorkersTableManager::new(path));
+    CommandStatus { status: true, message: Some(format!("worker {} started", key)) }
+}
+#[tauri::command]
+async fn stop_engine<R: Runtime>(app: tauri::AppHandle<R>, key: Option<String>) -> CommandStatus {
+    let kref = match key {
+        None => {
+            "default".to_string()
+        }
+        Some(keyref) => {
+            keyref
+        }
+    };
+    let worker_table = APPLICATION_CONTEXT.get::<WorkersTable>();
+    let mut stable = worker_table.lock().unwrap();
+    if !stable.contains_key(&kref) {
+        return CommandStatus { status: false, message: Some(format!("worker {} not found", kref)) };
+    }
+    match stable.remove(&kref) {
+        None => {
+            CommandStatus { status: false, message: Some(format!("worker {} not found", kref)) }
+        }
+        Some(main_worker_stable) => {
+            drop(main_worker_stable);
+            CommandStatus { status: true, message: Some(format!("worker {} stoped", kref)) }
+        }
+    }
+}
+#[tauri::command]
+async fn restart_engine<R: Runtime>(app: tauri::AppHandle<R>, key: Option<String>) -> CommandStatus {
+    let kref = match key {
+        None => {
+            "default".to_string()
+        }
+        Some(keyref) => {
+            keyref
+        }
+    };
+    let worker_table = APPLICATION_CONTEXT.get::<WorkersTable>();
+    let mut stable = worker_table.lock().unwrap();
+    if !stable.contains_key(&kref) {
+        return CommandStatus { status: false, message: Some(format!("worker {} not found", kref)) };
+    }
+    match stable.remove(&kref) {
+        None => {
+            CommandStatus { status: false, message: Some(format!("worker {} not found", kref)) }
+        }
+        Some(main_worker_stable) => {
+            stable.insert(kref.clone(), WorkersTableManager::new(main_worker_stable.main_nodule.clone()));
+            let _ = app.emit_all("runtimeRestart", ());
+            drop(main_worker_stable);
+            CommandStatus { status: true, message: Some(format!("worker {} stoped", kref)) }
+        }
+    }
 }
 
 async fn run<R: Runtime>(handle_ref: tauri::AppHandle<R>, port: Option<u16>) {
@@ -185,7 +246,7 @@ async fn run<R: Runtime>(handle_ref: tauri::AppHandle<R>, port: Option<u16>) {
 
 pub async fn default_router(request: Request<Body>) -> Response<Body> {
     let worker_table = APPLICATION_CONTEXT.get::<WorkersTable>();
-    let sender = worker_table.read().await.get("main").unwrap().request_channel.0.clone();
+    let sender = worker_table.lock().unwrap().get("main").unwrap().request_channel.0.clone();
     let (_response_tx, mut response_rx) = mpsc::channel(1);
     let _ = sender.send(RequestContext { request, response_tx: _response_tx.clone() }).await;
     let sleep = time::sleep(Duration::from_secs(5));
@@ -206,7 +267,7 @@ pub async fn default_router(request: Request<Body>) -> Response<Body> {
 /// Initializes the plugin.
 pub fn init<R: Runtime>(port: Option<u16>, main_module: String) -> TauriPlugin<R> {
     Builder::new("http-server")
-        .invoke_handler(tauri::generate_handler![restart_engine])
+        .invoke_handler(tauri::generate_handler![restart_engine,stop_engine,start_engine])
         .setup(move |handle| {
             let handle_ref = handle.clone();
             //resource/main.ts
