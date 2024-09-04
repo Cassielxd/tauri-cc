@@ -1,7 +1,6 @@
 {
-  "workspaces": [
-    "demo"
-  ],
+  "name": "demo",
+  "version": "0.0.0",
   "compilerOptions": {
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
