@@ -1,7 +1,7 @@
 debug = true
 is_demo = true
 # 这里可以使本地代码路径也可以是 远程路径  开发路径方便调试
-dev_code_path = "./src-tauri/demo/main.ts"
+dev_code_path = "./src-tauri/deno_demo/main.ts"
 # 这里可以使本地代码路径也可以是 远程路径
 pro_code_path = "./demo/main.ts"
 #JwtToken秘钥

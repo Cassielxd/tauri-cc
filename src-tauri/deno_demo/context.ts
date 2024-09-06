@@ -65,7 +65,7 @@ class Context {
     (async () => {
       await ctx.loaderAndBuilder();
       const { controller } = ctx;
-      const httpconn = new Deno.FakeHttpConn(0);
+      const httpconn = new FakeHttpConn(0);
       for await (const { request, respondWith } of httpconn) {
         let response = null;
         let url = new URL(request.url);

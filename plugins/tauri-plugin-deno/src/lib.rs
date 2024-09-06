@@ -7,13 +7,13 @@ use tauri::{
 };
 
 use futures::task::AtomicWaker;
-use deno_tauri::args::flags_from_vec;
-use deno_tauri::deno_runtime_tauri::deno_core::v8;
-use deno_tauri::deno_runtime_tauri::WorkerExecutionMode;
-use deno_tauri::deno_runtime_tauri::deno_permissions::PermissionsContainer;
-use deno_tauri::deno_runtime_tauri::tokio_util::create_and_run_current_thread;
-use deno_tauri::factory::CliFactory;
-use deno_tauri::tools::run::maybe_npm_install;
+use deno_pro_lib::args::flags_from_vec;
+use deno_pro_lib::deno_runtime::deno_core::v8;
+use deno_pro_lib::deno_runtime::WorkerExecutionMode;
+use deno_pro_lib::deno_runtime::deno_permissions::PermissionsContainer;
+use deno_pro_lib::deno_runtime::tokio_util::create_and_run_current_thread;
+use deno_pro_lib::factory::CliFactory;
+use deno_pro_lib::tools::run::maybe_npm_install;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -23,7 +23,7 @@ use std::time::Duration;
 use axum::body::Body;
 use axum::http::{Request, Response, StatusCode};
 use tokio::{select, time};
-use deno_tauri::deno_fake_http::{HttpReceiver, HttpSender, RequestContext};
+use deno_pro_lib::deno_ipcs::{deno_ipcs, HttpReceiver, HttpSender, RequestContext};
 use serde::Deserialize;
 use serde::Serialize;
 use state::Container;
@@ -120,10 +120,10 @@ impl MainWorkerThread {
                 // 运行npm install
                 maybe_npm_install(&factory).await.unwrap();
                 // 创建CLI主工作线程工厂实例
-                let worker_factory = factory.create_cli_main_worker_factory_tauri(Some(recever)).await.unwrap();
+                let worker_factory = factory.create_cli_main_worker_factory().await.unwrap();
                 // 创建自定义工作线程实例
                 let mut main_worker = worker_factory
-                    .create_main_worker(WorkerExecutionMode::Run, main_module, PermissionsContainer::allow_all())
+                    .create_custom_worker(WorkerExecutionMode::Run, main_module, PermissionsContainer::allow_all(), vec![deno_ipcs::init_ops_and_esm(Some(recever))], Default::default())
                     .await
                     .unwrap();
                 // 获取工作线程的JavaScript运行时线程安全句柄

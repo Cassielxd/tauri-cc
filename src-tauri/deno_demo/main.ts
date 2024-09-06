@@ -1,4 +1,4 @@
-import "@demo/def.ts";
+import "./def.ts";
 
 let worker = null;
 globalThis.onload = async (e: Event): Promise<void> => {
