@@ -5,7 +5,6 @@
 </template>
 <script setup lang="ts">
 import { computed } from 'vue';
-
 import { useLocale } from '@/locales/useLocale';
 import { useSettingStore } from '@/store';
 
@@ -15,7 +14,6 @@ const mode = computed(() => {
   return store.displayMode;
 });
 
-const { getComponentsLocale, locale } = useLocale();
 </script>
 <style lang="less" scoped>
 #nprogress .bar {

@@ -1,54 +1,63 @@
-use axum::Router;
+
+use serde_json::json;
 use std::net::SocketAddr;
 use std::str::FromStr;
 use tauri::{
-    plugin::{Builder, TauriPlugin},
-    Manager, Runtime,
+    plugin::{Builder, Plugin, Result as PluginResult, TauriPlugin}, window, AppHandle, Invoke, Manager, PageLoadPayload, Runtime, Window
 };
 
-use futures::task::AtomicWaker;
-use deno_pro_lib::args::flags_from_vec;
+
+
+use deno_pro_lib::{args::flags_from_vec, deno_ipcs::events_manager};
+use deno_pro_lib::deno_ipcs::{deno_ipcs,IpcReceiver,IpcSender,messages::IpcMessage,events_manager::EventsManager};
 use deno_pro_lib::deno_runtime::deno_core::v8;
-use deno_pro_lib::deno_runtime::WorkerExecutionMode;
 use deno_pro_lib::deno_runtime::deno_permissions::PermissionsContainer;
 use deno_pro_lib::deno_runtime::tokio_util::create_and_run_current_thread;
+use deno_pro_lib::deno_runtime::WorkerExecutionMode;
 use deno_pro_lib::factory::CliFactory;
 use deno_pro_lib::tools::run::maybe_npm_install;
-use std::collections::HashMap;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
-use std::sync::mpsc::sync_channel;
-use std::thread;
-use std::time::Duration;
-use axum::body::Body;
-use axum::http::{Request, Response, StatusCode};
-use tokio::{select, time};
-use deno_pro_lib::deno_ipcs::{deno_ipcs, HttpReceiver, HttpSender, RequestContext};
-use serde::Deserialize;
+use futures:: task::AtomicWaker;
+use serde::{ser, Deserialize};
 use serde::Serialize;
 use state::Container;
-use tokio::sync::{mpsc, RwLock};
+use std::collections::HashMap;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::mpsc::sync_channel;
+use std::sync::{Arc};
+use std::thread;
+use tokio::{select, sync::{mpsc, Mutex}};
 
 pub static APPLICATION_CONTEXT: Container![Send + Sync] = <Container![Send + Sync]>::new();
-type WorkersTable = Mutex<HashMap<String, WorkersTableManager>>;
+type WorkersTable =Mutex<HashMap<String, WorkersTableManager>>;
 #[derive(Clone)]
 pub struct WorkersTableManager {
-    pub main_worker_thread: Arc<Mutex<MainWorkerThread>>,
-    pub request_channel: (HttpSender, HttpReceiver),
+    pub main_worker_thread: Arc<Mutex<Vec<MainWorkerThread>>>,
     pub main_nodule: String,
+    pub worker_count: usize,
 }
 
 impl WorkersTableManager {
-    pub fn restart(self) {
-        let mut stable = self.main_worker_thread.lock().unwrap();
-        *stable = MainWorkerThread::new(self.main_nodule.clone(), self.request_channel.1.clone());
+    pub async fn restart(self,deno_sender: IpcSender,events_manager: EventsManager,) {
+        let mut stable = self.main_worker_thread.lock().await;
+        *stable = {
+            let mut arr = Vec::new();
+            for i in 0..self.worker_count {
+                arr.push(MainWorkerThread::new(self.main_nodule.clone(), deno_sender.clone(), events_manager.clone(),i));
+            }
+            arr
+        }
     }
-    pub fn new(main_nodule: String) -> Self {
-        let request_channel = async_channel::unbounded::<RequestContext>();
+    pub fn new(main_nodule: String,deno_sender: IpcSender,events_manager: EventsManager, worker_count: usize) -> Self {
         WorkersTableManager {
-            main_worker_thread: Arc::new(Mutex::new(MainWorkerThread::new(main_nodule.clone(), request_channel.1.clone()))),
+            main_worker_thread: {
+                let mut arr = Vec::new();
+                for i in 0..worker_count {
+                    arr.push(MainWorkerThread::new(main_nodule.clone(), deno_sender.clone(), events_manager.clone(),i));
+                }
+                Arc::new(Mutex::new(arr))
+            },
             main_nodule,
-            request_channel,
+            worker_count,
         }
     }
 }
@@ -63,7 +72,7 @@ pub struct MainWorkerHandle {
     // 是否已经终止，使用Arc来实现共享和同步访问
     terminate_waker: Arc<AtomicWaker>,
     // 终止唤醒器，使用Arc来实现共享和同步访问
-    isolate_handle: v8::IsolateHandle,   // JavaScript Isolate 的句柄
+    isolate_handle: v8::IsolateHandle, // JavaScript Isolate 的句柄
 }
 
 impl MainWorkerHandle {
@@ -96,17 +105,16 @@ impl MainWorkerHandle {
         }
     }
 }
-
 pub struct MainWorkerThread {
     worker_handle: MainWorkerHandle,
 }
 
 impl MainWorkerThread {
-    fn new(main_path: String, recever: HttpReceiver) -> MainWorkerThread {
+    fn new(main_path: String, deno_sender: IpcSender,events_manager: EventsManager,index: usize) -> MainWorkerThread {
         // 创建一个用于线程间通信的同步通道
         let (handle_sender, handle_receiver) = sync_channel::<MainWorkerHandle>(1);
         // 创建一个线程，并为其命名
-        let build = thread::Builder::new().name(format!("js-engine"));
+        let build = thread::Builder::new().name(format!("js-engine-{}", index));
         // 隐藏的线程任务，用于执行JavaScript引擎的初始化和运行"resource/main.ts".into()
         let _ = build.spawn(|| {
             let args = vec!["".to_string().into(), "run".to_string().into(), "--unstable".to_string().into(), "--inspect".to_string().into(), main_path.into()];
@@ -121,9 +129,10 @@ impl MainWorkerThread {
                 maybe_npm_install(&factory).await.unwrap();
                 // 创建CLI主工作线程工厂实例
                 let worker_factory = factory.create_cli_main_worker_factory().await.unwrap();
+                
                 // 创建自定义工作线程实例
                 let mut main_worker = worker_factory
-                    .create_custom_worker(WorkerExecutionMode::Run, main_module, PermissionsContainer::allow_all(), vec![deno_ipcs::init_ops_and_esm(Some(recever))], Default::default())
+                    .create_custom_worker(WorkerExecutionMode::Run, main_module, PermissionsContainer::allow_all(), vec![deno_ipcs::init_ops_and_esm(deno_sender,events_manager)], Default::default())
                     .await
                     .unwrap();
                 // 获取工作线程的JavaScript运行时线程安全句柄
@@ -148,8 +157,8 @@ impl MainWorkerThread {
           code = main_worker.run() => {
             println!("run {:?}",code);
            }
-        }
-            };
+          }
+        };
             // 创建并运行当前线程
             create_and_run_current_thread(future);
         });
@@ -172,111 +181,168 @@ pub struct CommandStatus {
     message: Option<String>,
 }
 #[tauri::command]
-async fn start_engine<R: Runtime>(app: tauri::AppHandle<R>, key: String, path: String) -> CommandStatus {
+async fn start_engine<R: Runtime>(app: tauri::AppHandle<R>, key: String, path: String, worker_count: Option<usize>) -> CommandStatus {
     let worker_table = APPLICATION_CONTEXT.get::<WorkersTable>();
-    let mut stable = worker_table.lock().unwrap();
+    let mut stable = worker_table.lock().await;
     if stable.contains_key(&key) {
-        return CommandStatus { status: false, message: Some(format!("worker {} Already exist", key)) };
+        return CommandStatus {
+            status: false,
+            message: Some(format!("worker {} Already exist", key)),
+        };
     }
-    stable.insert(key.clone(), WorkersTableManager::new(path));
-    CommandStatus { status: true, message: Some(format!("worker {} started", key)) }
+    let ipc_sender =app.state::<IpcSender>().inner().clone();
+    let events_manager =app.state::<EventsManager>().inner().clone();
+    stable.insert(key.clone(), WorkersTableManager::new(path, ipc_sender,events_manager,worker_count.unwrap()));
+    CommandStatus {
+        status: true,
+        message: Some(format!("worker {} started", key)),
+    }
 }
 #[tauri::command]
 async fn stop_engine<R: Runtime>(app: tauri::AppHandle<R>, key: Option<String>) -> CommandStatus {
     let kref = match key {
-        None => {
-            "default".to_string()
-        }
-        Some(keyref) => {
-            keyref
-        }
+        None => "default".to_string(),
+        Some(keyref) => keyref,
     };
     let worker_table = APPLICATION_CONTEXT.get::<WorkersTable>();
-    let mut stable = worker_table.lock().unwrap();
+    let mut stable = worker_table.lock().await;
     if !stable.contains_key(&kref) {
-        return CommandStatus { status: false, message: Some(format!("worker {} not found", kref)) };
+        return CommandStatus {
+            status: false,
+            message: Some(format!("worker {} not found", kref)),
+        };
     }
     match stable.remove(&kref) {
-        None => {
-            CommandStatus { status: false, message: Some(format!("worker {} not found", kref)) }
-        }
+        None => CommandStatus {
+            status: false,
+            message: Some(format!("worker {} not found", kref)),
+        },
         Some(main_worker_stable) => {
             drop(main_worker_stable);
-            CommandStatus { status: true, message: Some(format!("worker {} stoped", kref)) }
+            CommandStatus {
+                status: true,
+                message: Some(format!("worker {} stoped", kref)),
+            }
         }
     }
 }
 #[tauri::command]
-async fn restart_engine<R: Runtime>(app: tauri::AppHandle<R>, key: Option<String>) -> CommandStatus {
-    let kref = match key {
-        None => {
-            "default".to_string()
-        }
-        Some(keyref) => {
-            keyref
-        }
+async fn restart_engine<R: Runtime>(app: tauri::AppHandle<R>, key: Option<String>, worker_count: Option<usize>) -> CommandStatus {
+
+    let kref: String = match key {
+        None => "main".to_string(),
+        Some(keyref) => keyref,
     };
     let worker_table = APPLICATION_CONTEXT.get::<WorkersTable>();
-    let mut stable = worker_table.lock().unwrap();
+    let mut stable = worker_table.lock().await;
     if !stable.contains_key(&kref) {
-        return CommandStatus { status: false, message: Some(format!("worker {} not found", kref)) };
+        return CommandStatus {
+            status: false,
+            message: Some(format!("worker {} not found", kref)),
+        };
     }
     match stable.remove(&kref) {
-        None => {
-            CommandStatus { status: false, message: Some(format!("worker {} not found", kref)) }
-        }
+        None => CommandStatus {
+            status: false,
+            message: Some(format!("worker {} not found", kref)),
+        },
         Some(main_worker_stable) => {
-            stable.insert(kref.clone(), WorkersTableManager::new(main_worker_stable.main_nodule.clone()));
+            let ipc_sender =app.state::<IpcSender>().inner().clone();
+            let events_manager =app.state::<EventsManager>().inner().clone();
+            stable.insert(kref.clone(), WorkersTableManager::new(main_worker_stable.main_nodule.clone(),ipc_sender, events_manager,worker_count.unwrap()));
             let _ = app.emit_all("runtimeRestart", ());
             drop(main_worker_stable);
-            CommandStatus { status: true, message: Some(format!("worker {} stoped", kref)) }
+            CommandStatus {
+                status: true,
+                message: Some(format!("worker {} stoped", kref)),
+            }
         }
     }
 }
 
-async fn run<R: Runtime>(handle_ref: tauri::AppHandle<R>, port: Option<u16>) {
-    let address = match port {
-        Some(a) => SocketAddr::from_str(&format!("127.0.0.1:{}", a)).unwrap(),
-        None => SocketAddr::from_str("127.0.0.1:20004").unwrap()
-    };
-    println!(" - Local:   http://{}", address.clone());
-    let app = Router::new().fallback(default_router).with_state(handle_ref);
-    axum::Server::bind(&address).serve(app.into_make_service()).await.unwrap();
+#[tauri::command]
+async fn request<R: Runtime>(app: tauri::AppHandle<R>, name: String, content: String) {
+    let ipc_sender =app.state::<IpcSender>().inner().clone();
+    let _ = ipc_sender.send(IpcMessage::SentToDeno(name, content)).await.unwrap();
+    println!("request success");
 }
 
-pub async fn default_router(request: Request<Body>) -> Response<Body> {
-    let worker_table = APPLICATION_CONTEXT.get::<WorkersTable>();
-    let sender = worker_table.lock().unwrap().get("main").unwrap().request_channel.0.clone();
-    let (_response_tx, mut response_rx) = mpsc::channel(1);
-    let _ = sender.send(RequestContext { request, response_tx: _response_tx.clone() }).await;
-    let sleep = time::sleep(Duration::from_secs(5));
-    tokio::pin!(sleep);
-    select! {
-      _ = &mut sleep => {
-        let mut res = Response::new(Body::from("operation timed out".to_string()));
-        *res.status_mut() = StatusCode::REQUEST_TIMEOUT;
-        res
-      }
-      Some(res) = response_rx.recv() => {
-         res
-      }
-  }
+async fn run<R: Runtime>(handle_ref: tauri::AppHandle<R>) {
+    let ipc_recever =handle_ref.state::<IpcReceiver>().inner().clone();
+    let events_manager =handle_ref.state::<EventsManager>().inner().clone();
+    println!("run");
+    loop {
+        match ipc_recever.recv().await.unwrap() {
+            IpcMessage::SentToWindow(msg) => {
+                let window = handle_ref.get_window(&msg.id);
+                match window {
+                    Some(window) => {
+                        let _ = window.emit_all(&msg.event, msg.content);
+                    },
+                    None => {
+                        let _ = handle_ref.emit_all(&msg.event, msg.content);
+                    },
+                }
+                
+            },
+            IpcMessage::SentToDeno(name, content) => {
+                events_manager
+                .send(name, content.clone())
+                .await
+                .unwrap();
+            },
+        }
+    }
 }
 
 
-/// Initializes the plugin.
-pub fn init<R: Runtime>(port: Option<u16>, main_module: String) -> TauriPlugin<R> {
-    Builder::new("http-server")
-        .invoke_handler(tauri::generate_handler![restart_engine,stop_engine,start_engine])
-        .setup(move |handle| {
-            let handle_ref = handle.clone();
-            //resource/main.ts
-            let mut map = HashMap::new();
-            map.insert("main".to_string(), WorkersTableManager::new(main_module.clone()));
-            let workers_table = WorkersTable::new(map);
-            APPLICATION_CONTEXT.set(workers_table);
-            tokio::task::spawn(run(handle_ref, port));
-            Ok(())
-        })
-        .build()
+pub struct DenoServer<R: Runtime> {
+    main_module: String,
+    invoke_handler: Box<dyn Fn(Invoke<R>) + Send + Sync>,
+    events_manager: EventsManager,
+    pub deno_sender: IpcSender,
+    pub deno_receiver: IpcReceiver,
+}
+impl<R: Runtime> DenoServer<R> {
+    pub fn new( main_module: String) -> Self {
+    let (deno_sender,deno_receiver) =async_channel::unbounded::<IpcMessage>();
+      Self {
+        invoke_handler: Box::new(tauri::generate_handler![restart_engine, stop_engine, start_engine,request]),
+        main_module,
+        events_manager: EventsManager::new(),
+        deno_sender,
+        deno_receiver
+      }
+    }
+}
+
+impl<R: Runtime> Plugin<R> for DenoServer<R> {
+    fn name(&self) -> &'static str {
+        "ipcs"
+    }
+    fn initialization_script(&self) -> Option<String> {
+        None
+      }
+    fn initialize(&mut self, _app: &AppHandle<R>, _config: serde_json::Value) -> PluginResult<()> {
+        _app.manage(self.deno_sender.clone());
+        _app.manage(self.deno_receiver.clone());
+        _app.manage(self.events_manager.clone());
+        let handle_ref: AppHandle<R> = _app.clone();
+        let mut map = HashMap::new();
+        map.insert("main".to_string(), WorkersTableManager::new(self.main_module.clone(), self.deno_sender.clone(),self.events_manager.clone(),1));
+        let workers_table: Mutex<HashMap<String, WorkersTableManager>> = WorkersTable::new(map);
+        APPLICATION_CONTEXT.set(workers_table);
+        println!("initialize");
+        tokio::task::spawn(run(handle_ref));
+        Ok(())
+      }
+    fn created(&mut self, _window: Window<R>) {   
+    }
+    fn on_page_load(&mut self, _window: Window<R>, _payload: PageLoadPayload) {}
+      
+    fn on_event(&mut self, _app: &tauri::AppHandle<R>, _event: &tauri::RunEvent) {}
+    fn extend_api(&mut self, invoke: Invoke<R>) {
+        println!("extend_api");
+        (self.invoke_handler)(invoke)
+    }
 }

@@ -147,9 +147,16 @@ const updateContainer = () => {
     // height: resizeTime.value * 56,
   });
 };
-
+const { invoke } = window.__TAURI__.tauri;
+invoke('plugin:ipcs|request', { name: 'testIpc', content: JSON.stringify( {data:"aaaa"}) }).then((res) => {
+    console.log(res);
+  })
+  .catch((err: any) => {
+    console.log(err);
+});
 onMounted(() => {
   renderCharts();
+
   nextTick(() => {
     updateContainer();
   });

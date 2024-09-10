@@ -65,39 +65,14 @@ class Context {
     (async () => {
       await ctx.loaderAndBuilder();
       const { controller } = ctx;
-      const httpconn = new FakeHttpConn(0);
+      const httpconn = new IpcConn("testIpc");
       for await (const { request, respondWith } of httpconn) {
-        let response = null;
-        let url = new URL(request.url);
         try {
-          const match = ctx.matchUrl(request.url);
-          if (!match) throw new Error("notfound");
-          if (match.router.method != request.method)
-            throw new Error("not support " + request.method);
-          const fn = controller[match.router.className][match.router.key];
-          if (!fn) throw new Error("method notfound");
-          let args: Args = {
-            request: request,
-            pathVariable: match.groups,
-            params: url.searchParams
-          };
-          const result = await fn.call(
-            controller[match.router.className], args
-          );
-          if (result instanceof Response) {
-            response = result;
-          } else {
-            response = new Response(result, {
-              status: 200,
-              headers: {
-                "Content-Type": `application/json;charset=utf-8`
-              }
-            });
-          }
+             console.log(request);
         } catch (e) {
-          response = new Response(e.message, { status: 500 });
+      
         } finally {
-          respondWith(response);
+  
         }
       }
     })();

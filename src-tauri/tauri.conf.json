@@ -3,7 +3,8 @@
     "beforeBuildCommand": "",
     "beforeDevCommand": "",
     "devPath": "http://localhost:3002",
-    "distDir": "../tauri_admin/dist"
+    "distDir": "../tauri_admin/dist",
+    "withGlobalTauri": true
   },
   "package": {
     "productName": "tauri-cc",

@@ -1,6 +1,8 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use std::borrow::BorrowMut;
+
 use tauri::Manager;
 use tauri_desktop::{init_context};
 use tauri_desktop::config::config::ApplicationConfig;
@@ -19,12 +21,17 @@ async fn main() -> anyhow::Result<()> {
         }
         Ok(())
     });
-    let mut path = ref_app_config.pro_code_path();
+    #[cfg(not(debug_assertions))]
+    {
+        let path = ref_app_config.pro_code_path();
+        build = build.plugin(tauri_plugin_deno::DenoServer::new(path.into()));
+    }
     #[cfg(debug_assertions)]
     {
-        path = ref_app_config.dev_code_path();
+        let path = ref_app_config.dev_code_path();
+        build = build.plugin(tauri_plugin_deno::DenoServer::new(path.into()));
     }
-    build = build.plugin(tauri_plugin_deno::init(ref_app_config.server().port().clone(), path.into()));
+
     build.run(tauri::generate_context!())
         .expect("error while running tauri application");
     Ok(())
