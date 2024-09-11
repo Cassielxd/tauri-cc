@@ -261,10 +261,10 @@ async fn restart_engine<R: Runtime>(app: tauri::AppHandle<R>, key: Option<String
 }
 
 #[tauri::command]
-async fn request<R: Runtime>(app: tauri::AppHandle<R>, name: String, content: String) {
+async fn request<R: Runtime>(app: tauri::AppHandle<R>, name: String, content: serde_json::Value) {
     let ipc_sender =app.state::<IpcSender>().inner().clone();
     let _ = ipc_sender.send(IpcMessage::SentToDeno(name, content)).await.unwrap();
-    println!("request success");
+
 }
 
 async fn run<R: Runtime>(handle_ref: tauri::AppHandle<R>) {
@@ -332,7 +332,6 @@ impl<R: Runtime> Plugin<R> for DenoServer<R> {
         map.insert("main".to_string(), WorkersTableManager::new(self.main_module.clone(), self.deno_sender.clone(),self.events_manager.clone(),1));
         let workers_table: Mutex<HashMap<String, WorkersTableManager>> = WorkersTable::new(map);
         APPLICATION_CONTEXT.set(workers_table);
-        println!("initialize");
         tokio::task::spawn(run(handle_ref));
         Ok(())
       }
@@ -342,7 +341,6 @@ impl<R: Runtime> Plugin<R> for DenoServer<R> {
       
     fn on_event(&mut self, _app: &tauri::AppHandle<R>, _event: &tauri::RunEvent) {}
     fn extend_api(&mut self, invoke: Invoke<R>) {
-        println!("extend_api");
         (self.invoke_handler)(invoke)
     }
 }

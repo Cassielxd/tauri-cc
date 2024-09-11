@@ -67,7 +67,8 @@ import Trend from '@/components/trend/index.vue';
 import { t } from '@/locales';
 import { useSettingStore } from '@/store';
 import { changeChartsTheme } from '@/utils/color';
-
+import { emit, listen } from '@tauri-apps/api/event';
+import { invoke } from '@tauri-apps/api'
 import { constructInitDashboardDataset } from '../index';
 
 echarts.use([LineChart, BarChart, CanvasRenderer]);
@@ -147,13 +148,15 @@ const updateContainer = () => {
     // height: resizeTime.value * 56,
   });
 };
-const { invoke } = window.__TAURI__.tauri;
-invoke('plugin:ipcs|request', { name: 'testIpc', content: JSON.stringify( {data:"aaaa"}) }).then((res) => {
+invoke('plugin:ipcs|request', { name: 'testIpc', content: {data:"aaaa"} }).then((res) => {
     console.log(res);
   })
   .catch((err: any) => {
     console.log(err);
 });
+const unlisten = await listen('testIpc', (event) => {
+  console.log(event);
+})
 onMounted(() => {
   renderCharts();
 

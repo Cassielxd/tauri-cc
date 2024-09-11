@@ -69,6 +69,7 @@ class Context {
       for await (const { request, respondWith } of httpconn) {
         try {
              console.log(request);
+             respondWith("testIpc",request);
         } catch (e) {
       
         } finally {

@@ -1,10 +1,8 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::borrow::BorrowMut;
-
 use tauri::Manager;
-use tauri_desktop::{init_context};
+use tauri_desktop::init_context;
 use tauri_desktop::config::config::ApplicationConfig;
 use tauri_desktop::APPLICATION_CONTEXT;
 
