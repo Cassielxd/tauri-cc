@@ -14,7 +14,7 @@ const store = useSettingStore();
 const mode = computed(() => {
   return store.displayMode;
 });
-invoke('plugin:ipcs|send_to_deno', {key:"main", name: 'testIpc', content: {url:"www.baodu.com",data:"aaaa"} }).then((res) => {
+invoke('plugin:ipcs|send_to_deno', {key:"main", name: 'testIpc', content: {url:"http://localhost:8080/demo/test3333/hello",method:"POST",data:"aaaa"} }).then((res) => {
   console.log(res);
 }).catch((err: any) => {
   console.log(err);

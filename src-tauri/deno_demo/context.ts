@@ -73,17 +73,32 @@ class Context {
    
   }
   async startIpcServer(){
-    
-    const httpconn = new IpcConn("testIpc");
-    for await (const { request, respondWith } of httpconn) {
+    const ctx = this;
+    const { controller } = ctx;
+    //main：消息发送到主窗口的(如果为空 则发送到所有的窗口)  testIpc:事件名称(如果main窗口没有监听的话 是收不到的)
+    IPcs.listenOn("main","testIpc",async (request: any)=>{
+      let response = {status:200,message:"success",body:""};
       try {
-           respondWith("main","testIpc",request);
-      } catch (e) {
-        console.log(e);
-      } finally {
-
-      }
-    }
+        if(request.url){
+          let url = new URL(request.url);
+          const match = ctx.matchUrl(request.url);
+          if (!match) throw new Error("notfound");
+          if (match.router.method != request.method)
+            throw new Error("not support " + request.method);
+          const fn = controller[match.router.className][match.router.key];
+          if (!fn) throw new Error("method notfound");
+          response.body = await fn.call(
+            controller[match.router.className], request
+          );
+        }else{
+          response={status:500,message:"url is empty",body:""};
+        }
+      }catch (e:any) {
+        response={status:500,message:e.message,body:""};
+      }finally {
+        return response;
+      }   
+    });
   }
   startHttpServer(){
     // deno-lint-ignore no-this-alias
