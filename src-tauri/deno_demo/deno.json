@@ -5,6 +5,5 @@
   "compilerOptions": {
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
-  },
-  "lock": false
+  }
 }

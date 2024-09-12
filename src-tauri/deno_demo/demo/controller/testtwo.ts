@@ -1,25 +1,26 @@
 import BaseContextClass from "../../base.ts";
+import Context from "../../context.ts";
 import { Controller, RequestMapping } from "../../core.ts";
 
 @Controller("/test3333")
 class Testtwo extends BaseContextClass {
-  constructor(cxt) {
+  constructor(cxt: Context) {
     super(cxt);
   }
 
   @RequestMapping("POST", "/hello")
-  async hello(_req) {
+  async hello(_req: any) {
     console.log(this.app);
     return "tetst";
   }
 
   @RequestMapping("POST", "/ssssssssss")
-  async aaaaaaaaaa(_req) {
+  async aaaaaaaaaa(_req: any) {
     return "tetst";
   }
 
   @RequestMapping("POST", "/aaaaaaaaa")
-  async getaaaaa(_req) {
+  async getaaaaa(_req: any) {
     return "tetst";
   }
 }

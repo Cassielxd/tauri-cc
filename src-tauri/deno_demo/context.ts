@@ -1,6 +1,10 @@
+// deno-lint-ignore-file
+// deno-lint-ignore-file prefer-const
 import { Args } from "./types.ts";
 import config from "./deno.json" with  { type: "json" };
 import { buildRouter } from "./core.ts";
+import { Application } from "jsr:@oak/oak/application";
+import { Router } from "jsr:@oak/oak/router";
 
 class Context {
   service: { [key: string]: any } = {};
@@ -39,18 +43,17 @@ class Context {
   }
 
   async loaderAndBuilder() {
-
     let { workspaces } = config;
     if (!workspaces) return;
     for (let i = 0; i < workspaces.length; i++) {
       try {
         let item = workspaces[i];
-        let { controllers, services } = await import("./" + item + "/resource.ts");
-        controllers.forEach(({ name, ClassName }) => {
+        let { controllers, services }:any = await import("./" + item + "/resource.ts");
+        controllers.forEach(({ name, ClassName }:any) => {
           this.addRouter(buildRouter(item, name, ClassName));
           this.addController(name, new ClassName(this));
         });
-        services.forEach(({ name, ClassName }) => {
+        services.forEach(({ name, ClassName }:any) => {
           this.addService(name, new ClassName(this));
         });
       } catch (e) {
@@ -64,19 +67,50 @@ class Context {
     const ctx = this;
     (async () => {
       await ctx.loaderAndBuilder();
-      const { controller } = ctx;
-      const httpconn = new IpcConn("testIpc");
-      for await (const { request, respondWith } of httpconn) {
-        try {
-             console.log(request);
-             respondWith("testIpc",request);
-        } catch (e) {
-      
-        } finally {
-  
-        }
-      }
+       ctx.startIpcServer();
+       ctx.startHttpServer();
     })();
+   
+  }
+  async startIpcServer(){
+    
+    const httpconn = new IpcConn("testIpc");
+    for await (const { request, respondWith } of httpconn) {
+      try {
+           respondWith("main","testIpc",request);
+      } catch (e) {
+        console.log(e);
+      } finally {
+
+      }
+    }
+  }
+  startHttpServer(){
+    // deno-lint-ignore no-this-alias
+    const self = this;
+    const router = new Router();
+    for (let [key, value] of this.routers) {
+      switch (value.method) {
+        case "POST":
+          router.post(key, async (ctx) => {
+            let body = await ctx.request.body.json();
+           let responseBody = await self.controller[value.className][value.key](body);
+           ctx.response.body = responseBody;
+          });
+          break;
+        case "GET":
+          router.get(key, async (ctx) => {
+            let responseBody = await self.controller[value.className][value.key](ctx.request);
+            ctx.response.body = responseBody;
+           });
+          break;
+      }
+    }
+    const app = new Application();
+    app.use(router.routes());
+    app.use(router.allowedMethods());
+    console.log("http://localhost:8080");
+    app.listen({ port: 8080 });
   }
 }
 

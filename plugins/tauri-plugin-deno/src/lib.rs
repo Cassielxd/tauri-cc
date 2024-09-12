@@ -28,36 +28,21 @@ use std::thread;
 use tokio::{select, sync::{mpsc, Mutex}};
 
 pub static APPLICATION_CONTEXT: Container![Send + Sync] = <Container![Send + Sync]>::new();
-type WorkersTable =Mutex<HashMap<String, WorkersTableManager>>;
+type WorkersTable =Mutex<HashMap<String, WorkerManager>>;
 #[derive(Clone)]
-pub struct WorkersTableManager {
-    pub main_worker_thread: Arc<Mutex<Vec<MainWorkerThread>>>,
+pub struct WorkerManager {
+    pub main_worker_thread: MainWorkerThread,
     pub main_nodule: String,
-    pub worker_count: usize,
 }
 
-impl WorkersTableManager {
-    pub async fn restart(self,deno_sender: IpcSender,events_manager: EventsManager,) {
-        let mut stable = self.main_worker_thread.lock().await;
-        *stable = {
-            let mut arr = Vec::new();
-            for i in 0..self.worker_count {
-                arr.push(MainWorkerThread::new(self.main_nodule.clone(), deno_sender.clone(), events_manager.clone(),i));
-            }
-            arr
-        }
+impl WorkerManager {
+    pub async fn restart(&mut self,deno_sender: IpcSender,events_manager: EventsManager,) {
+        self.main_worker_thread = MainWorkerThread::new(self.main_nodule.clone(), deno_sender.clone(), events_manager.clone())
     }
-    pub fn new(main_nodule: String,deno_sender: IpcSender,events_manager: EventsManager, worker_count: usize) -> Self {
-        WorkersTableManager {
-            main_worker_thread: {
-                let mut arr = Vec::new();
-                for i in 0..worker_count {
-                    arr.push(MainWorkerThread::new(main_nodule.clone(), deno_sender.clone(), events_manager.clone(),i));
-                }
-                Arc::new(Mutex::new(arr))
-            },
-            main_nodule,
-            worker_count,
+    pub fn new(main_nodule: String,deno_sender: IpcSender,events_manager: EventsManager) -> Self {
+        WorkerManager {
+            main_worker_thread: MainWorkerThread::new(main_nodule.clone(), deno_sender.clone(), events_manager.clone()),
+            main_nodule
         }
     }
 }
@@ -105,19 +90,20 @@ impl MainWorkerHandle {
         }
     }
 }
+#[derive(Clone)]
 pub struct MainWorkerThread {
     worker_handle: MainWorkerHandle,
 }
 
 impl MainWorkerThread {
-    fn new(main_path: String, deno_sender: IpcSender,events_manager: EventsManager,index: usize) -> MainWorkerThread {
+    fn new(main_path: String, deno_sender: IpcSender,events_manager: EventsManager) -> MainWorkerThread {
         // 创建一个用于线程间通信的同步通道
         let (handle_sender, handle_receiver) = sync_channel::<MainWorkerHandle>(1);
         // 创建一个线程，并为其命名
-        let build = thread::Builder::new().name(format!("js-engine-{}", index));
+        let build = thread::Builder::new().name(format!("js-engine"));
         // 隐藏的线程任务，用于执行JavaScript引擎的初始化和运行"resource/main.ts".into()
         let _ = build.spawn(|| {
-            let args = vec!["".to_string().into(), "run".to_string().into(), "--unstable".to_string().into(), "--inspect".to_string().into(), main_path.into()];
+            let args = vec!["".to_string().into(), "run".to_string().into(), main_path.into()];
             // 将args转换为flagset
             let flags = Arc::new(flags_from_vec(args).unwrap());
             let future = async {
@@ -163,7 +149,7 @@ impl MainWorkerThread {
             create_and_run_current_thread(future);
         });
         // 获取handle_receiver通道接收到的值，即MainWorkerHandle实例
-        let worker_handle = handle_receiver.recv().unwrap();
+        let worker_handle: MainWorkerHandle = handle_receiver.recv().unwrap();
         // 创建MainWorkerThread实例
         MainWorkerThread { worker_handle: worker_handle.into() }
     }
@@ -181,7 +167,7 @@ pub struct CommandStatus {
     message: Option<String>,
 }
 #[tauri::command]
-async fn start_engine<R: Runtime>(app: tauri::AppHandle<R>, key: String, path: String, worker_count: Option<usize>) -> CommandStatus {
+async fn start_engine<R: Runtime>(app: tauri::AppHandle<R>, key: String, path: String) -> CommandStatus {
     let worker_table = APPLICATION_CONTEXT.get::<WorkersTable>();
     let mut stable = worker_table.lock().await;
     if stable.contains_key(&key) {
@@ -192,14 +178,14 @@ async fn start_engine<R: Runtime>(app: tauri::AppHandle<R>, key: String, path: S
     }
     let ipc_sender =app.state::<IpcSender>().inner().clone();
     let events_manager =app.state::<EventsManager>().inner().clone();
-    stable.insert(key.clone(), WorkersTableManager::new(path, ipc_sender,events_manager,worker_count.unwrap()));
+    stable.insert(key.clone(), WorkerManager::new(path, ipc_sender,events_manager));
     CommandStatus {
         status: true,
         message: Some(format!("worker {} started", key)),
     }
 }
 #[tauri::command]
-async fn stop_engine<R: Runtime>(app: tauri::AppHandle<R>, key: Option<String>) -> CommandStatus {
+async fn stop_engine<R: Runtime>(_app: tauri::AppHandle<R>, key: Option<String>) -> CommandStatus {
     let kref = match key {
         None => "default".to_string(),
         Some(keyref) => keyref,
@@ -227,7 +213,7 @@ async fn stop_engine<R: Runtime>(app: tauri::AppHandle<R>, key: Option<String>) 
     }
 }
 #[tauri::command]
-async fn restart_engine<R: Runtime>(app: tauri::AppHandle<R>, key: Option<String>, worker_count: Option<usize>) -> CommandStatus {
+async fn restart_engine<R: Runtime>(app: tauri::AppHandle<R>, key: Option<String>) -> CommandStatus {
 
     let kref: String = match key {
         None => "main".to_string(),
@@ -249,7 +235,7 @@ async fn restart_engine<R: Runtime>(app: tauri::AppHandle<R>, key: Option<String
         Some(main_worker_stable) => {
             let ipc_sender =app.state::<IpcSender>().inner().clone();
             let events_manager =app.state::<EventsManager>().inner().clone();
-            stable.insert(kref.clone(), WorkersTableManager::new(main_worker_stable.main_nodule.clone(),ipc_sender, events_manager,worker_count.unwrap()));
+            stable.insert(kref.clone(), WorkerManager::new(main_worker_stable.main_nodule.clone(),ipc_sender, events_manager));
             let _ = app.emit_all("runtimeRestart", ());
             drop(main_worker_stable);
             CommandStatus {
@@ -261,16 +247,14 @@ async fn restart_engine<R: Runtime>(app: tauri::AppHandle<R>, key: Option<String
 }
 
 #[tauri::command]
-async fn request<R: Runtime>(app: tauri::AppHandle<R>, name: String, content: serde_json::Value) {
-    let ipc_sender =app.state::<IpcSender>().inner().clone();
-    let _ = ipc_sender.send(IpcMessage::SentToDeno(name, content)).await.unwrap();
-
+async fn send_to_deno<R: Runtime>(app: tauri::AppHandle<R>,key:String,  name: String, content: serde_json::Value) {
+    let ipc_sender: async_channel::Sender<IpcMessage> =app.state::<IpcSender>().inner().clone();
+    let _ = ipc_sender.send(IpcMessage::SentToDeno(key,name, content)).await.unwrap();
 }
 
 async fn run<R: Runtime>(handle_ref: tauri::AppHandle<R>) {
     let ipc_recever =handle_ref.state::<IpcReceiver>().inner().clone();
-    let events_manager =handle_ref.state::<EventsManager>().inner().clone();
-    println!("run");
+    let events_manager_ref =handle_ref.state::<ManagerMap>().inner().clone();
     loop {
         match ipc_recever.recv().await.unwrap() {
             IpcMessage::SentToWindow(msg) => {
@@ -283,23 +267,39 @@ async fn run<R: Runtime>(handle_ref: tauri::AppHandle<R>) {
                         let _ = handle_ref.emit_all(&msg.event, msg.content);
                     },
                 }
-                
             },
-            IpcMessage::SentToDeno(name, content) => {
-                events_manager
-                .send(name, content.clone())
-                .await
-                .unwrap();
+            IpcMessage::SentToDeno(key,name, content) => {        
+                let mut events_manager_map = events_manager_ref.lock().await;
+                match events_manager_map.get(&key) {
+                 Some(events_manager) =>{
+                     //通知指定的worker
+                     events_manager
+                     .send(name, content.clone())
+                     .await
+                     .unwrap();
+                 },
+                 None => {
+                     //通知所有的worker
+                     for (_key,events_manager) in  events_manager_map.iter_mut() {
+                         events_manager
+                         .send(name.clone(), content.clone())
+                         .await
+                         .unwrap();
+                     }
+                 },
+                 }
+            
+                
             },
         }
     }
 }
 
-
+type ManagerMap= Arc<Mutex<HashMap<String,EventsManager>>>;
 pub struct DenoServer<R: Runtime> {
     main_module: String,
     invoke_handler: Box<dyn Fn(Invoke<R>) + Send + Sync>,
-    events_manager: EventsManager,
+    events_managers_map: ManagerMap,
     pub deno_sender: IpcSender,
     pub deno_receiver: IpcReceiver,
 }
@@ -307,9 +307,9 @@ impl<R: Runtime> DenoServer<R> {
     pub fn new( main_module: String) -> Self {
     let (deno_sender,deno_receiver) =async_channel::unbounded::<IpcMessage>();
       Self {
-        invoke_handler: Box::new(tauri::generate_handler![restart_engine, stop_engine, start_engine,request]),
+        invoke_handler: Box::new(tauri::generate_handler![restart_engine, stop_engine, start_engine,send_to_deno]),
         main_module,
-        events_manager: EventsManager::new(),
+        events_managers_map: ManagerMap::new(Mutex::new(HashMap::new())),
         deno_sender,
         deno_receiver
       }
@@ -326,13 +326,19 @@ impl<R: Runtime> Plugin<R> for DenoServer<R> {
     fn initialize(&mut self, _app: &AppHandle<R>, _config: serde_json::Value) -> PluginResult<()> {
         _app.manage(self.deno_sender.clone());
         _app.manage(self.deno_receiver.clone());
-        _app.manage(self.events_manager.clone());
+        _app.manage(self.events_managers_map.clone());
         let handle_ref: AppHandle<R> = _app.clone();
-        let mut map = HashMap::new();
-        map.insert("main".to_string(), WorkersTableManager::new(self.main_module.clone(), self.deno_sender.clone(),self.events_manager.clone(),1));
-        let workers_table: Mutex<HashMap<String, WorkersTableManager>> = WorkersTable::new(map);
-        APPLICATION_CONTEXT.set(workers_table);
-        tokio::task::spawn(run(handle_ref));
+        let events_manager = EventsManager::new();
+        let worker_manager = WorkerManager::new(self.main_module.clone(), self.deno_sender.clone(),events_manager.clone());
+        let events_managers_map_ref =self.events_managers_map.clone();
+        tokio::task::spawn(async move{
+            let mut map = HashMap::new();   
+            events_managers_map_ref.lock().await.insert("main".to_string(), events_manager.clone());
+            map.insert("main".to_string(),worker_manager);
+            let workers_table: Mutex<HashMap<String, WorkerManager>> = WorkersTable::new(map);
+            APPLICATION_CONTEXT.set(workers_table);
+            run(handle_ref).await;
+        });
         Ok(())
       }
     fn created(&mut self, _window: Window<R>) {   
