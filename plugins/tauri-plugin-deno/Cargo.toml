@@ -16,4 +16,4 @@ lazy_static = "1"
 async-channel = { workspace = true }
 futures = "0.3.28"
 state = "0.5"
-deno_pro = { version = "2.0.0-rc.1", path = "D:\\workspace\\rust2024\\deno\\cli", features = ["hmr"] }
+deno_pro = { version = "2.0.0-rc.2", path = "D:\\workspace\\rust2024\\deno\\cli", features = ["hmr"] }
