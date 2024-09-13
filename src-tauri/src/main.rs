@@ -34,3 +34,21 @@ async fn main() -> anyhow::Result<()> {
         .expect("error while running tauri application");
     Ok(())
 }
+
+//同步消息
+#[tauri::command]
+fn sync_message(invoke_message: String) {
+  println!("I was invoked from JS, with this message: {}", invoke_message);
+}
+
+//异步消息
+#[tauri::command]
+async fn async_message(value: &str) -> Result<String, ()> {
+  // Call another async function and wait for it to finish
+  some_async_function().await;
+  // Note that the return value must be wrapped in `Ok()` now.
+  Ok(format!("{}", value))
+}
+async fn some_async_function(){
+
+}

@@ -117,7 +117,7 @@ impl MainWorkerThread {
                 let worker_factory = factory.create_cli_main_worker_factory().await.unwrap();
                 
                 // 创建自定义工作线程实例
-                let mut main_worker = worker_factory
+                let mut main_worker: deno_pro_lib::worker::CliMainWorker = worker_factory
                     .create_custom_worker(WorkerExecutionMode::Run, main_module, PermissionsContainer::allow_all(), vec![deno_ipcs::init_ops_and_esm(deno_sender,events_manager)], Default::default())
                     .await
                     .unwrap();

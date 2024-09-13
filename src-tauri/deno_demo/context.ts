@@ -75,8 +75,8 @@ class Context {
   async startIpcServer(){
     const ctx = this;
     const { controller } = ctx;
-    //main：消息发送到主窗口的(如果为空 则发送到所有的窗口)  testIpc:事件名称(如果main窗口没有监听的话 是收不到的)
-    IPcs.listenOn("main","testIpc",async (request: any)=>{
+    let ipcBroadcastChannel = new IpcBroadcastChannel("testIpc");
+    ipcBroadcastChannel.onmessage=async ({data:request}: MessageEvent)=>{
       let response = {status:200,message:"success",body:""};
       try {
         if(request.url){
@@ -96,9 +96,12 @@ class Context {
       }catch (e:any) {
         response={status:500,message:e.message,body:""};
       }finally {
-        return response;
+        console.log("ipc response")
+        ipcBroadcastChannel.postMessage({key:"main",message:response});
       }   
-    });
+    }
+    //main：消息发送到主窗口的(如果为空 则发送到所有的窗口)  testIpc:事件名称(如果main窗口没有监听的话 是收不到的)
+    
   }
   startHttpServer(){
     // deno-lint-ignore no-this-alias
@@ -115,12 +118,13 @@ class Context {
           break;
         case "GET":
           router.get(key, async (ctx) => {
-            let responseBody = await self.controller[value.className][value.key](ctx.request);
+            let responseBody = await self.controller[value.className][value.key](ctx.params);
             ctx.response.body = responseBody;
            });
           break;
       }
     }
+    
     const app = new Application();
     app.use(router.routes());
     app.use(router.allowedMethods());
