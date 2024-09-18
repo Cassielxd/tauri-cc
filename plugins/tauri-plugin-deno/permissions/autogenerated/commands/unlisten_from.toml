@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-unlisten-from"
+description = "Enables the unlisten_from command without any pre-configured scope."
+commands.allow = ["unlisten_from"]
+
+[[permission]]
+identifier = "deny-unlisten-from"
+description = "Denies the unlisten_from command without any pre-configured scope."
+commands.deny = ["unlisten_from"]

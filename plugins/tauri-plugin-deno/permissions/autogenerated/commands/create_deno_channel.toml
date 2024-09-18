@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-create-deno-channel"
+description = "Enables the create_deno_channel command without any pre-configured scope."
+commands.allow = ["create_deno_channel"]
+
+[[permission]]
+identifier = "deny-create-deno-channel"
+description = "Denies the create_deno_channel command without any pre-configured scope."
+commands.deny = ["create_deno_channel"]
