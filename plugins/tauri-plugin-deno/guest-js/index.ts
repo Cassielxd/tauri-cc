@@ -80,7 +80,6 @@ export class Deno extends Channel<any> {
   }
   //关闭
   async close(){
-    this.#map
     //循环遍历map删除监听
     for (let [key, value] of this.#map) {
       await unlistenFrom(this.#rid, value,key);
