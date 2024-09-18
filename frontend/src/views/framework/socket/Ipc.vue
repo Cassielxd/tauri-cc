@@ -46,6 +46,8 @@ import { toRaw } from 'vue';
 import {invoke} from "@tauri-apps/api";
 import { emit, listen } from '@tauri-apps/api/event';
 import { appWindow, WebviewWindow } from '@tauri-apps/api/window'
+import { Deno } from 'tauri-plugin-deno-api';
+let deno = new Deno("main");
 export default {
   data() {
     return {
@@ -67,6 +69,9 @@ export default {
   },
   mounted () {
     this.init();
+    deno.onmessage=(message)=>{
+      console.log('deno message:', message);
+    }
   },
   methods: {
     init () {

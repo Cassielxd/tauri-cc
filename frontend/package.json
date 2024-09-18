@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "tauri-plugin-deno-api":"file:../plugins/tauri-plugin-deno",
     "@ant-design/icons-vue": "^6.1.0",
     "@tauri-apps/api": ">=2.0.0-rc.0",
     "@tauri-apps/plugin-shell": ">=2.0.0-rc.0",
