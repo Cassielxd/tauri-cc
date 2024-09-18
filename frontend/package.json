@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "@ant-design/icons-vue": "^6.1.0",
-    "@tauri-apps/api": "^1.6.0",
+    "@tauri-apps/api": ">=2.0.0-rc.0",
+    "@tauri-apps/plugin-shell": ">=2.0.0-rc.0",
     "ant-design-vue": "2.2.6",
     "axios": "^0.21.1",
     "socket.io-client": "^4.4.1",
@@ -29,6 +30,7 @@
     "postcss-pxtorem": "^6.0.0",
     "terser": "^5.19.1",
     "vite": "^4.4.4",
-    "vite-plugin-compression": "^0.5.1"
+    "vite-plugin-compression": "^0.5.1",
+    "@tauri-apps/cli": ">=2.0.0-rc.0"
   }
 }

@@ -5,6 +5,7 @@ import config from "./deno.json" with  { type: "json" };
 import { buildRouter } from "./core.ts";
 import { Application } from "jsr:@oak/oak/application";
 import { Router } from "jsr:@oak/oak/router";
+import { cors, type CorsOptions } from "jsr:@momiji/cors";
 
 class Context {
   service: { [key: string]: any } = {};
@@ -109,27 +110,54 @@ class Context {
     const router = new Router();
     for (let [key, value] of this.routers) {
       switch (value.method) {
-        case "POST":
+        case "POST":{
+          console.log(value.className,key);
           router.post(key, async (ctx) => {
             let body = await ctx.request.body.json();
            let responseBody = await self.controller[value.className][value.key](body);
            ctx.response.body = responseBody;
           });
           break;
-        case "GET":
+        }
+        case "GET":{
           router.get(key, async (ctx) => {
             let responseBody = await self.controller[value.className][value.key](ctx.params);
             ctx.response.body = responseBody;
            });
           break;
+        }
+        
       }
     }
-    
+    router.get("/wss", (ctx) => {
+      if (!ctx.isUpgradable) {
+        ctx.throw(501);
+      }
+      const ws = ctx.upgrade();
+      ws.onopen = () => {
+        console.log("Connected to client");
+        ws.send("Hello from server!");
+      };
+      ws.onmessage = (m) => {
+        console.log("Got message from client: ", m.data);
+        ws.send(m.data as string);
+        ws.close();
+      };
+      ws.onclose = () => console.log("Disconncted from client");
+    });
+    const corsOptions: CorsOptions = {
+      origin: "http://localhost:8080",
+      allowMethods: ["GET", "POST"],
+      allowHeaders: ["Content-Type"],
+      credentials: true,
+      maxAge: 86400,
+    };
     const app = new Application();
+    app.use(cors(corsOptions));
     app.use(router.routes());
     app.use(router.allowedMethods());
-    console.log("http://localhost:8080");
-    app.listen({ port: 8080 });
+    console.log("http://localhost:9999");
+    app.listen({ port: 9999 });
   }
 }
 

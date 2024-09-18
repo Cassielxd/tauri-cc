@@ -14,7 +14,7 @@ async fn main() -> anyhow::Result<()> {
     build = build.setup(|app| {
         #[cfg(debug_assertions)] //仅在调试时自动打开开发者工具
         {
-            let main_window = app.get_window("main").unwrap();
+            let main_window = app.get_webview_window("main").unwrap();
             main_window.open_devtools();
         }
         Ok(())
@@ -22,33 +22,35 @@ async fn main() -> anyhow::Result<()> {
     #[cfg(not(debug_assertions))]
     {
         let path = ref_app_config.pro_code_path();
-        build = build.plugin(tauri_plugin_deno::DenoServer::new(path.into()));
+        build = build.plugin(tauri_plugin_deno::init(path.into()));
     }
     #[cfg(debug_assertions)]
     {
         let path = ref_app_config.dev_code_path();
-        build = build.plugin(tauri_plugin_deno::DenoServer::new(path.into()));
+        build = build.plugin(tauri_plugin_deno::init(path.into()));
     }
-
+    build =  build.invoke_handler(tauri::generate_handler![sync_message, async_message]);
     build.run(tauri::generate_context!())
         .expect("error while running tauri application");
     Ok(())
 }
 
 //同步消息
-#[tauri::command]
-fn sync_message(invoke_message: String) {
-  println!("I was invoked from JS, with this message: {}", invoke_message);
+
+#[tauri::command(rename_all = "snake_case")]
+fn sync_message(invoke_message: String)-> Result<String, ()>  {
+  println!("同步调用: {}", invoke_message);
+  Ok(format!("{}", invoke_message))
 }
 
 //异步消息
-#[tauri::command]
+#[tauri::command(rename_all = "snake_case")]
 async fn async_message(value: &str) -> Result<String, ()> {
   // Call another async function and wait for it to finish
   some_async_function().await;
   // Note that the return value must be wrapped in `Ok()` now.
-  Ok(format!("{}", value))
+  Ok(format!("异步调用 {}", value))
 }
 async fn some_async_function(){
-
+    println!("异步调用");
 }

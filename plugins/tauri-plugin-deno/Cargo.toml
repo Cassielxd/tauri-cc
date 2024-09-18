@@ -6,14 +6,19 @@ description = ""
 edition = "2021"
 rust-version = "1.60"
 exclude = ["/examples"]
+links = "tauri-plugin-deno"
 
 [dependencies]
 serde_json = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
-tauri = { workspace = true, features = ["wry"] }
+tauri = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
+thiserror = { workspace = true }
 lazy_static = "1"
 async-channel = { workspace = true }
 futures = "0.3.28"
 state = "0.5"
 deno_pro = { version = "2.0.0-rc.2", path = "D:\\workspace\\rust2024\\deno\\cli", features = ["hmr"] }
+
+[build-dependencies]
+tauri-plugin = { version = "2.0.0-rc.12", features = ["build"] }
