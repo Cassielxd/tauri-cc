@@ -16,28 +16,7 @@
         结果：{{ message2 }}
       </a-space>
     </div>
-   <div class="one-block-1">
-      <span>
-        全局事件
-      </span>
-    </div>
-    <div class="one-block-2">
-      <a-space>
-        <a-button @click="sendMsgStart">发送</a-button>
-        结果：{{ messageString }}
-      </a-space>
-    </div>
-    <div class="one-block-1">
-      <span>
-        特定窗口事件
-      </span>
-    </div>
-    <div class="one-block-2">
-      <a-space>
-        <a-button @click="sendMsgStart2()">发送</a-button>
-        结果：{{ messageString }}
-      </a-space>
-    </div>
+
   </div>
 </template>
 <script>

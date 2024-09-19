@@ -43,6 +43,9 @@ export default {
   mounted () {
     this.init();
   },
+  unmounted() {
+    deno.close();
+  },
   methods: {
     async init () {
       deno.onmessage=(message)=>{
