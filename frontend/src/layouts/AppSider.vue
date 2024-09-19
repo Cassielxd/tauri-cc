@@ -7,18 +7,18 @@
       width="100"
     >
       <div class="logo">
-        <img class="pic-logo" src="~@/assets/logo.png">
+
       </div>
-      <a-menu 
-        class="menu-item" 
-        theme="light" 
+      <a-menu
+        class="menu-item"
+        theme="light"
         mode="inline"
         :selectedKeys="[current]"
         @click="menuHandle"
       >
         <a-menu-item v-for="(menuInfo, index) in menu" :key="index">
           <icon-font :type="menuInfo.icon" />
-          {{ menuInfo.title }} 
+          {{ menuInfo.title }}
         </a-menu-item>
       </a-menu>
     </a-layout-sider>
@@ -45,7 +45,7 @@ export default {
           params: {
             // test: 'hello'
           },
-        },
+        },/*
         'menu_2' : {
           icon: 'icon-niudan',
           title: '系统',
@@ -63,13 +63,13 @@ export default {
           title: '特效',
           pageName: 'Effect',
           params: {},
-        },   
+        },
         'menu_5' : {
           icon: 'icon-gouwu',
           title: 'cross',
           pageName: 'Cross',
           params: {},
-        },          
+        },*/
       }
     };
   },

@@ -43,7 +43,7 @@
 <script>
 
 import { toRaw } from 'vue';
-
+import { invoke } from "@tauri-apps/api/core";
 
 export default {
   data() {

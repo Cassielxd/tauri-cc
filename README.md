@@ -27,8 +27,9 @@ nodejs
 1：rust 最新版本
 2：开发工具 RustRover
 3: nodejs 最新版本18.0.0
-4：tauri-cli 最新版本 1.5
+4：tauri-cli 最新版本 2.0.0-rc.15
 5：配置RUSTY_V8_MIRROR 环境变量
+6: deno 版本于官方同步
 https://github.com/denoland/rusty_v8/releases 下载v8 对应版本
 
 ### 使用说明
@@ -41,10 +42,8 @@ https://github.com/denoland/rusty_v8/releases 下载v8 对应版本
 
 ```
 frontend   //前端目录
-ext  //deno 扩展
-micro_engine  //deno 核心
 tauri-src  //tauri 后端
-resources  //deno代码目录 默认启动这个目录下的main.ts
+tauri-src/deno_demo  //deno代码目录 默认启动这个目录下的main.ts
 ```
 
 #### 参与贡献
