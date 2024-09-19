@@ -67,13 +67,13 @@ async fn run<R: Runtime>(handle_ref: tauri::AppHandle<R>) {
                   },
               }
           },
-          IpcMessage::SentToDeno(key,name, content) => {        
+          IpcMessage::SentToDeno(msg) => {        
               let events_manager_map = workers_table_ref.read().await;
-              match events_manager_map.get(&key) {
+              match events_manager_map.get(&msg.id) {
                Some(worker_manager) =>{
                    //通知指定的worker
                    worker_manager.events_manager
-                   .send(name, content.clone())
+                   .send(msg.event.clone(), msg.content)
                    .await
                    .unwrap();
                },
@@ -81,7 +81,7 @@ async fn run<R: Runtime>(handle_ref: tauri::AppHandle<R>) {
                    //通知所有的worker
                    for (_key,worker_manager) in  events_manager_map.iter() {
                     worker_manager
-                       .events_manager.send(name.clone(), content.clone())
+                       .events_manager.send(msg.event.clone(), msg.content.clone())
                        .await
                        .unwrap();
                    }

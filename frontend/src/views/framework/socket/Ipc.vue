@@ -46,8 +46,7 @@ import { toRaw } from 'vue';
 import {invoke} from "@tauri-apps/api";
 import { emit, listen } from '@tauri-apps/api/event';
 import { appWindow, WebviewWindow } from '@tauri-apps/api/window'
-import { Deno } from 'tauri-plugin-deno-api';
-let deno = new Deno("main");
+
 export default {
   data() {
     return {
@@ -69,17 +68,11 @@ export default {
   },
   mounted () {
     this.init();
-    deno.onmessage=(message)=>{
-      console.log('deno message:', message);
-    }
+
   },
   methods: {
     init () {
-      listen('click', (event) => {
-        // event.event 是事件名称 (当你想用一个回调函数处理不同类型的事件时很有用)
-        // event.payload 是负载对象
-        this.messageString = event.payload;
-      })
+
     },
     sendMsgStart() {
       const params = {

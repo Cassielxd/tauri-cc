@@ -31,7 +31,8 @@ import {invoke} from "@tauri-apps/api";
 import { listen } from '@tauri-apps/api/event';
 import axios from 'axios';
 import storage from 'store2';
-
+import { Deno } from 'tauri-plugin-deno-api';
+let deno = new Deno("main");
 export default {
   data() {
     return {
@@ -45,18 +46,18 @@ export default {
   },
   methods: {
     init () {
-      const unlisten =  listen('testIpc', (event) => {
-          console.log(event);
-          this.result= event.payload;
-      })
-
+      deno.listenOn("testIpc");
+      deno.onmessage=(message)=>{
+        console.log('deno message:', message);
+      }
     },
     sendIpcRequest () {
-      invoke('plugin:ipcs|send_to_deno', {key:"main", name: 'testIpc', content: {url:"http://localhost:8080/demo/test3333/hello",method:"POST",data:"aaaa"} }).then((res) => {
+      deno.send('testIpc',{url:"http://localhost:8080/demo/test3333/hello",method:"POST",data:"aaaa"});
+ /*     invoke('plugin:ipcs|send_to_deno', {key:"main", name: 'testIpc', content: {url:"http://localhost:8080/demo/test3333/hello",method:"POST",data:"aaaa"} }).then((res) => {
         console.log(res);
       }).catch((err) => {
         console.log(err);
-      });
+      });*/
     },
     sendRequest (id) {
       this.requestHttp("demo/test3333/hello", {id}).then(res => {
