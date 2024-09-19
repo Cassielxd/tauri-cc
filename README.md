@@ -1,5 +1,7 @@
 # tauri-cc
 
+#### english README is here: <https://github.com/Cassielxd/tauri-cc/blob/master/README_EN.md>
+
 #### 介绍
 
 rust 桌面端开发框架 Tauri 和Deno的融合，如果对性能要求比较高可以使用rust 开发 也可以使用 deno开发 tauri ，对前端开发友好
