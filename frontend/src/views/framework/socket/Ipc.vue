@@ -43,9 +43,7 @@
 <script>
 
 import { toRaw } from 'vue';
-import {invoke} from "@tauri-apps/api";
-import { emit, listen } from '@tauri-apps/api/event';
-import { appWindow, WebviewWindow } from '@tauri-apps/api/window'
+
 
 export default {
   data() {

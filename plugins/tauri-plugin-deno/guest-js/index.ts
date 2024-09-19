@@ -7,34 +7,28 @@ export interface IpcMessage {
 }
 export async function sendToDeno(value: IpcMessage): Promise<string | null> {
   return await invoke("plugin:deno|send_to_deno", {
-    payload: value,
-  }).then((r: any) => (r.value ? r.value : null));
+    ...value,
+  });
 }
 export async function listenOn(
   rid: number,
   name: string
 ): Promise<string> {
-  return await invoke("plugin:deno|listen_on", {
-    payload: { rid, name },
-  }).then((r: any) => (r));
+  return await invoke("plugin:deno|listen_on", {rid, name}).then((r: any) => (r));
 }
 export async function unlistenFrom(
   rid: number,
   listenerid:string,
   name: string
 ): Promise<string | null> {
-  return await invoke("plugin:deno|unlisten_from", {
-    payload: { rid, name,listenerid },
-  }).then((r: any) => (r.value ? r.value : null));
+  return await invoke("plugin:deno|unlisten_from", { rid, name,listenerid }).then((r: any) => (r.value ? r.value : null));
 }
 
 export async function createDenoChannel(
   key: string,
   channel: Channel<any>
 ): Promise<number> {
-  return await invoke("plugin:deno|create_deno_channel", {
-    payload: { key, on_event: channel },
-  }).then((r: any) => r);
+  return await invoke("plugin:deno|create_deno_channel", { key:key, onEvent: channel });
 }
 export async function closeDenoChannel(
   rid: number
@@ -51,7 +45,6 @@ export class Deno extends Channel<any> {
   constructor(key: string) {
     super();
     this.#key = key;
-    this.init();
   }
   //初始化DenoChannel
   async init() {

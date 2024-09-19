@@ -1,0 +1,16 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "enables the default permissions",
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "core:default",
+    "deno:allow-close-deno-channel",
+    "deno:allow-listen-on",
+    "deno:allow-send-to-deno",
+    "deno:allow-unlisten-from",
+    "deno:allow-create-deno-channel"
+  ]
+}

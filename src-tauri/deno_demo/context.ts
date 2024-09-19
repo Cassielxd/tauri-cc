@@ -99,7 +99,7 @@ class Context {
         response={status:500,message:e.message,body:""};
       }finally {
         console.log("ipc response")
-        ipcBroadcastChannel.postMessage({key:"main",message:response});
+        ipcBroadcastChannel.postMessage({key:"main",name:"test",message:response});
       }   
     }
     //main：消息发送到主窗口的(如果为空 则发送到所有的窗口)  testIpc:事件名称(如果main窗口没有监听的话 是收不到的)
@@ -154,6 +154,7 @@ class Context {
       maxAge: 86400,
     };
     const app = new Application();
+    //@ts-ignore
     app.use(cors(corsOptions));
     app.use(router.routes());
     app.use(router.allowedMethods());

@@ -27,11 +27,10 @@
 </template>
 <script>
 
-import {invoke} from "@tauri-apps/api";
-import { listen } from '@tauri-apps/api/event';
+
 import axios from 'axios';
 import storage from 'store2';
-import { Deno } from 'tauri-plugin-deno-api';
+import { Deno } from './index';
 let deno = new Deno("main");
 export default {
   data() {
@@ -45,19 +44,17 @@ export default {
     this.init();
   },
   methods: {
-    init () {
-      deno.listenOn("testIpc");
+    async init () {
       deno.onmessage=(message)=>{
+        this.result= message;
         console.log('deno message:', message);
       }
+      await deno.init();
+      await deno.listenOn("test");
+      console.log(deno);
     },
     sendIpcRequest () {
       deno.send('testIpc',{url:"http://localhost:8080/demo/test3333/hello",method:"POST",data:"aaaa"});
- /*     invoke('plugin:ipcs|send_to_deno', {key:"main", name: 'testIpc', content: {url:"http://localhost:8080/demo/test3333/hello",method:"POST",data:"aaaa"} }).then((res) => {
-        console.log(res);
-      }).catch((err) => {
-        console.log(err);
-      });*/
     },
     sendRequest (id) {
       this.requestHttp("demo/test3333/hello", {id}).then(res => {

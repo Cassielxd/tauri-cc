@@ -51,7 +51,7 @@ impl <R: Runtime> DenoManager<R>  {
 
 
 async fn run<R: Runtime>(handle_ref: tauri::AppHandle<R>) {
-  let ipc_recever: async_channel::Receiver<IpcMessage> =handle_ref.state::<IpcReceiver>().inner().clone();
+  let ipc_recever =handle_ref.deno().deno_receiver.clone();
   let workers_table_ref = handle_ref.deno().workers_table.clone();
   loop {
       match ipc_recever.recv().await.unwrap() {

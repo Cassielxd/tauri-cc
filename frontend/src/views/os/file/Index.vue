@@ -4,7 +4,7 @@
       <span>
         1. 系统原生对话框
       </span>
-    </div>  
+    </div>
     <div class="one-block-2">
       <a-space>
         <a-button @click="messageShow()">消息提示(ipc)</a-button>
@@ -15,7 +15,7 @@
       <span>
         2. 选择保存目录
       </span>
-    </div>  
+    </div>
     <div class="one-block-2">
       <a-row>
         <a-col :span="12">
@@ -27,12 +27,12 @@
           </a-button>
         </a-col>
       </a-row>
-    </div>      
+    </div>
     <div class="one-block-1">
       <span>
         3. 打开文件夹
       </span>
-    </div>  
+    </div>
     <div class="one-block-2">
       <a-list :grid="{ gutter: 16, column: 4 }" :data-source="file_list">
         <template #renderItem="{ item }">
@@ -57,7 +57,7 @@
       <span>
         4. 上传文件到图床
       </span>
-    </div>  
+    </div>
     <div class="one-block-2">
       <a-upload-dragger
         name="file"
@@ -119,35 +119,23 @@ export default {
   },
   methods: {
     getHost () {
-      ipc.invoke(ipcApiRoute.checkHttpServer, {}).then(r => {
-        if (r.enable) {
-          this.servicAddress = r.server;
-          storage.set('httpServiceConfig', r);
-
-          // url转换
-          const host = r.server || 'http://localhost:7071';
-          let uri = ipcApiRoute.uploadFile;
-          let url = uri.split('.').join('/');
-          this.action_url = host + '/' + url;
-        }
-      })
     },
     openDirectry (id) {
       ipc.invoke(ipcApiRoute.openDirectory, {id: id}).then(res => {
         //console.log('res:', res)
-      })      
+      })
     },
     selectDir() {
       ipc.invoke(ipcApiRoute.selectFolder, '').then(r => {
         this.dir_path = r;
         this.$message.info(r);
-      })      
+      })
     },
 		messageShow() {
       ipc.invoke(ipcApiRoute.messageShow, '').then(r => {
         this.$message.info(r);
       })
-    },    
+    },
     messageShowConfirm() {
       ipc.invoke(ipcApiRoute.messageShowConfirm, '').then(r => {
         this.$message.info(r);

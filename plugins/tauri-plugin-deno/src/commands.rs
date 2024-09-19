@@ -60,7 +60,7 @@ pub async fn send_to_deno<R: Runtime>(window: tauri::Window<R>,name:String,  rid
 
 #[tauri::command]
 pub  fn create_deno_channel<R: Runtime>(window: tauri::Window<R>,key:String,on_event: Channel<serde_json::Value>)->ResourceId {
-    let w_ref: std::sync::Arc<tokio::sync::RwLock<std::collections::HashMap<String, crate::WorkerManager>>> =window.deno().workers_table.clone();
+    let w_ref =window.deno().workers_table.clone();
     let workers_table =w_ref.try_read().unwrap();
    if let Some(worker_manager) = workers_table.get(&key){
    let deno_channel = DenoResource{ events_manager:worker_manager.events_manager.clone(), on_event};
@@ -72,7 +72,7 @@ pub  fn create_deno_channel<R: Runtime>(window: tauri::Window<R>,key:String,on_e
 pub async fn listen_on<R: Runtime>(window: tauri::Window<R>,rid: ResourceId, name: String)->Uuid{
     let channel = window.resources_table().get::<DenoResource>(rid).unwrap();
     let  listener_id= Uuid::new_v4();
-        channel.listen_on(name,listener_id).await;
+        channel.listen_on(name.clone(),listener_id).await;
         return  listener_id;
 }
 
@@ -86,7 +86,6 @@ pub async fn unlisten_from<R: Runtime>(window: tauri::Window<R>,rid: ResourceId,
     Err(_) => {},
     }
 }
-
 
 #[tauri::command]
 pub async fn close_deno_channel<R: Runtime>(window: tauri::Window<R>,rid: ResourceId) {
