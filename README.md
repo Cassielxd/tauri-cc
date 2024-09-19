@@ -2,8 +2,9 @@
 
 #### 介绍
 
-rust 桌面端开发框架 tauri 和deno的融合，如果对性能要求比较高可以使用rust 开发 也可以使用 deno开发 tauri ，对前端开发友好
-上手快
+rust 桌面端开发框架 Tauri 和Deno的融合，如果对性能要求比较高可以使用rust 开发 也可以使用 deno开发 tauri ，对前端开发友好
+上手快,对于习惯使用Electron  js 开发桌面端的小伙伴，可以尝试使用 tauri-cc，融合了rust 和 js 两种方式；既有 rust 的 高性能也保留了
+js 的灵活
 
 #### tauri
 
@@ -30,13 +31,15 @@ nodejs
 4：tauri-cli 最新版本 2.0.0-rc.15
 5：配置RUSTY_V8_MIRROR 环境变量
 6: deno 版本于官方同步
-https://github.com/denoland/rusty_v8/releases 下载v8 对应版本
+<https://github.com/denoland/rusty_v8/releases> 下载v8 对应版本
 
 ### 使用说明
 
-1. 启动前端： 进入frontend目录，执行 pnpm install && pnpm run dev
+1. 进入plugin/tauri-plugin-deno目录运行： 执行 npm run build
 2. 构建tauri： 根目录下执行 cargo build
 3. 进入tauri-src目录运行： 执行 cargo run
+4. 启动前端： 进入frontend目录，执行 npm install && npm run dev
+5. 启动后端： 进入tauri-src目录，执行 cargo run
 
 ### 包结构说明
 
