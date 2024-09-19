@@ -46,7 +46,9 @@
       },
       "resources": [
         "./bootstrap.toml",
-        "./deno_demo/*"
+        "./deno_demo/*",
+        "./deno_demo/*/*",
+        "./deno_demo/*/*/*"
       ],
       "shortDescription": "",
       "targets": "all",

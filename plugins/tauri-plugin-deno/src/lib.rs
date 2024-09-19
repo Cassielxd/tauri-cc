@@ -24,7 +24,7 @@ mod models;
 pub use error::Error;
 
 
-pub static APPLICATION_CONTEXT: Container![Send + Sync] = <Container![Send + Sync]>::new();
+
 pub type WorkersTable =Mutex<HashMap<String, WorkerManager>>;
 
 pub type ManagerMap= Arc<Mutex<HashMap<String,EventsManager>>>;
