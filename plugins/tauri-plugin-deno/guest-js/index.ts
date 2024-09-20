@@ -37,15 +37,37 @@ export async function closeDenoChannel(
   }).then((r: any) => (r));}
 
 
+  interface ChannelMessage {
+     event: String,//对应的事件
+     content: any,
+}
+interface Litype {
+  name: String,//对应的事件
+  fn: any,
+}
 //deno channe默认实现 主要用于后端的 deno服务的通信
 export class Deno extends Channel<any> {
   #key: string;
   #rid: number = 0;
   #status: "start"|"run"|"close"
+  arr:Litype[] =[];
+  static async create(key: string): Promise<Deno> {
+    let deno = new Deno(key);
+    await deno.init();
+    return deno;
+  }
   constructor(key: string) {
     super();
     this.#key = key;
     this.#status = "start";
+    this.onmessage=(data:ChannelMessage)=>{
+      console.log(this.arr.length);
+           this.arr.forEach((item:any)=>{
+             if(item.name==data.event){
+               item.fn(data.content);
+             }
+           })
+    }
   }
   //初始化DenoChannel
   async init(fn?:any) {
@@ -62,8 +84,9 @@ export class Deno extends Channel<any> {
     return await sendToDeno({ rid: this.#rid, name, content: value });
   }
   //监听
-  async listenOn(name: string) {
+  async listenOn(name: string,fn:any) {
     await listenOn(this.#rid, name);
+    this.arr.push({name,fn});
   }
   //解除监听
   async unlistenFrom(name: string) {
@@ -75,3 +98,7 @@ export class Deno extends Channel<any> {
     this.#status = "close";
   }
 }
+function item(value: never, index: number, array: never[]): void {
+  throw new Error("Function not implemented.");
+}
+
