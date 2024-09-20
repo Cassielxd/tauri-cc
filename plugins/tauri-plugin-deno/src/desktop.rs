@@ -57,8 +57,8 @@ impl <R: Runtime> DenoManager<R>  {
 /// 1.接收webview发来的消息，通过webview id找到对应的worker，然后通知worker
 /// 2.接收deno发来的消息，通过id找到对应的worker，然后通知worker
 async fn run<R: Runtime>(handle_ref: tauri::AppHandle<R>) {
-  let ipc_recever =handle_ref.deno().deno_receiver.clone();
-  let workers_table_ref = handle_ref.deno().workers_table.clone();
+  let ipc_recever =handle_ref.receiver();
+  let workers_table_ref = handle_ref.workers_table();
   loop {
       match ipc_recever.recv().await.unwrap() {
           IpcMessage::SentToWindow(msg) => {

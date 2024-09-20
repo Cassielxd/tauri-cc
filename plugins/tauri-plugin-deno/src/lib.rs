@@ -7,11 +7,11 @@ use tauri::{
     plugin::{Builder, TauriPlugin},  Manager, Runtime
 };
 
-use deno_pro_lib::deno_ipcs::events_manager::EventsManager;
+use deno_pro_lib::deno_ipcs::{events_manager::EventsManager, IpcSender,IpcReceiver};
 use state::Container;
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, RwLock};
 pub type Result<T> = std::result::Result<T, Error>;
 
 pub use models::*;
@@ -31,11 +31,23 @@ pub type ManagerMap= Arc<Mutex<HashMap<String,EventsManager>>>;
 
 pub trait DenoExt<R: Runtime> {
     fn deno(&self) -> &DenoManager<R>;
+    fn sender(&self) -> IpcSender;
+    fn receiver(&self) -> IpcReceiver;
+    fn workers_table(&self) -> Arc<RwLock<HashMap<String, WorkerManager>>>;
   }
-  
+
   impl<R: Runtime, T: Manager<R>> crate::DenoExt<R> for T {
     fn deno(&self) -> &DenoManager<R> {
       self.state::<DenoManager<R>>().inner()
+    }
+    fn sender(&self) -> IpcSender{
+      self.state::<DenoManager<R>>().inner().deno_sender.clone()
+    }
+    fn receiver(&self) -> IpcReceiver{
+      self.state::<DenoManager<R>>().inner().deno_receiver.clone()
+    }
+    fn workers_table(&self) -> Arc<RwLock<HashMap<String, WorkerManager>>>{
+      self.state::<DenoManager<R>>().inner().workers_table.clone()
     }
   }
 

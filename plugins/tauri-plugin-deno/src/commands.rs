@@ -74,7 +74,7 @@ impl Resource for  DenoResource{
 /// 向所有deno 发送消息
 #[tauri::command]
 pub async fn send_to_all_deno<R: Runtime>(window: tauri::Window<R>,key:String,name:String,content: serde_json::Value) {
-    let w_ref =window.deno().deno_sender.clone();
+    let w_ref =window.sender();
     let _ = w_ref.send(IpcMessage::SentToDeno(SentToDenoMessage{id:key,event:name,content})).await;
 }
 
@@ -94,7 +94,7 @@ pub async fn send_to_deno<R: Runtime>(window: tauri::Window<R>,name:String,  rid
 // 于指定的deno 创建通道
 #[tauri::command]
 pub  fn create_deno_channel<R: Runtime>(window: tauri::Window<R>,key:String,on_event: Channel<serde_json::Value>)->ResourceId {
-    let w_ref =window.deno().workers_table.clone();
+    let w_ref =window.workers_table();
     let workers_table: tokio::sync::RwLockReadGuard<'_, HashMap<String, crate::WorkerManager>> =w_ref.try_read().unwrap();
    if let Some(worker_manager) = workers_table.get(&key){
    let deno_channel = DenoResource{ events_manager:worker_manager.events_manager.clone(), on_event,resouce_map: Mutex::new(HashMap::new())};
