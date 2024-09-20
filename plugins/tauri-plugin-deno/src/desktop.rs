@@ -14,7 +14,9 @@ pub  fn  init<R: Runtime>(
      let _ = deno_manager.initialize();
   Ok(deno_manager)
 }
-
+///deno 插件管理器
+/// workers_table deno 进程的map
+/// main_module deno 主进程的模块
 #[derive(Clone)]
 pub struct DenoManager<R: Runtime> {
   pub handler:AppHandle<R>,
@@ -35,6 +37,7 @@ impl <R: Runtime> DenoManager<R>  {
       workers_table: Arc::new(RwLock::new(HashMap::new())),
     }
   }
+  ///初始化插件并启动 deno 进程
   pub  fn initialize(&self) ->Result<(), Box<dyn std::error::Error>> {
     let handle_ref= self.handler.clone();
     let reff = self.workers_table.clone();
@@ -49,7 +52,10 @@ impl <R: Runtime> DenoManager<R>  {
   }
 }
 
-
+/// deno 插件运行主函数
+/// 通信实现
+/// 1.接收webview发来的消息，通过webview id找到对应的worker，然后通知worker
+/// 2.接收deno发来的消息，通过id找到对应的worker，然后通知worker
 async fn run<R: Runtime>(handle_ref: tauri::AppHandle<R>) {
   let ipc_recever =handle_ref.deno().deno_receiver.clone();
   let workers_table_ref = handle_ref.deno().workers_table.clone();
