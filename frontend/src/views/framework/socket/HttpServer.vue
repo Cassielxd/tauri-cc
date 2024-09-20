@@ -30,7 +30,7 @@
 
 import axios from 'axios';
 import storage from 'store2';
-import { DenoManager,Deno } from './index';
+import { DenoManager,Deno } from 'tauri-plugin-deno-api';
 let deno = null;
 export default {
   data() {
