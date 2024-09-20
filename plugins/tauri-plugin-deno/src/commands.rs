@@ -2,6 +2,7 @@
 
 use std::collections::HashMap;
 
+use serde::{Deserialize, Serialize};
 use tauri::{ipc::Channel, Manager, Resource, ResourceId, Runtime};
 
 use deno_pro_lib::deno_ipcs::{events_manager::EventsManager, messages::{IpcMessage, SentToDenoMessage}};
@@ -9,10 +10,17 @@ use tokio::{select, sync::{mpsc::{channel,Sender}, Mutex}};
 use uuid::Uuid;
 
 use crate::DenoExt;
+
+#[derive(Serialize, Deserialize, Debug, PartialEq,Clone)]
+pub struct ChannelMessage {
+    pub event: String,//对应的事件
+    pub content: serde_json::Value,
+}
+
 //DenoResource 通信默认实现
 struct DenoResource{
     pub events_manager: EventsManager,
-    pub on_event: Channel<serde_json::Value>,
+    pub on_event: Channel<ChannelMessage>,
     pub resouce_map: Mutex<HashMap<String,Sender<bool>>>
 }
 impl DenoResource {
@@ -26,14 +34,14 @@ impl DenoResource {
         let (listener, mut receiver) = channel(1);
         let (resource_sender, mut resource_receiver) = channel::<bool>(1);
         let events_manager_ref =self.events_manager.clone();
-        let on_event_ref: Channel<serde_json::Value> = self.on_event.clone();
+        let on_event_ref: Channel<ChannelMessage> = self.on_event.clone();
         tokio::task::spawn(async move {
             let  listener_id= Uuid::new_v4();
             events_manager_ref.listen_on(name.clone(), listener_id,listener).await;
             loop {
                 select! {
                     value = receiver.recv() => {
-                        let _ = on_event_ref.send(value.unwrap());
+                        let _ = on_event_ref.send(ChannelMessage{event:name.clone(),content:value.unwrap()});
                         println!("on_event_ref send success {}",on_event_ref.id());
                     },
                     _ = resource_receiver.recv() => {
@@ -93,7 +101,7 @@ pub async fn send_to_deno<R: Runtime>(window: tauri::Window<R>,name:String,  rid
 
 // 于指定的deno 创建通道
 #[tauri::command]
-pub  fn create_deno_channel<R: Runtime>(window: tauri::Window<R>,key:String,on_event: Channel<serde_json::Value>)->ResourceId {
+pub  fn create_deno_channel<R: Runtime>(window: tauri::Window<R>,key:String,on_event: Channel<ChannelMessage>)->ResourceId {
     let w_ref =window.workers_table();
     let workers_table: tokio::sync::RwLockReadGuard<'_, HashMap<String, crate::WorkerManager>> =w_ref.try_read().unwrap();
    if let Some(worker_manager) = workers_table.get(&key){
