@@ -100,7 +100,20 @@ pub async fn send_to_deno<R: Runtime>(window: tauri::Window<R>,name:String,  rid
     Err(_) => {},
    }
 }
-
+#[tauri::command]
+pub  fn check_deno_channel<R: Runtime>(window: tauri::Window<R>,key:String) -> bool {
+    let w_ref =window.workers_table();
+    let workers_table: tokio::sync::RwLockReadGuard<'_, HashMap<String, crate::WorkerManager>> =w_ref.try_read().unwrap();
+    match workers_table.get(&key) {
+    Some(_) => {
+        true
+    },
+    None => {
+        false
+    },
+    }
+    
+}
 // 于指定的deno 创建通道
 #[tauri::command]
 pub  fn create_deno_channel<R: Runtime>(window: tauri::Window<R>,key:String,on_event: Channel<ChannelMessage>)->ResourceId {
