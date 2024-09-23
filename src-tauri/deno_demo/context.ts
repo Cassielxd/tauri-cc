@@ -98,8 +98,8 @@ class Context {
       }catch (e:any) {
         response={status:500,message:e.message,body:""};
       }finally {
-        console.log("ipc response")
         ipcBroadcastChannel.postMessage({key:"main",name:"test",message:response});
+        ipcBroadcastChannel.postMessage({key:"main",name:"test1",message:response});
       }   
     }
     //main：消息发送到主窗口的(如果为空 则发送到所有的窗口)  testIpc:事件名称(如果main窗口没有监听的话 是收不到的)

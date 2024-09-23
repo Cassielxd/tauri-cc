@@ -41,12 +41,14 @@ impl DenoResource {
             loop {
                 select! {
                     value = receiver.recv() => {
-                        let _ = on_event_ref.send(ChannelMessage{event:name.clone(),content:value.unwrap()});
-                        println!("on_event_ref send success {}",on_event_ref.id());
+                        let result = on_event_ref.send(ChannelMessage{event:name.clone(),content:value.unwrap()});
+                        if let Err(_e) = result{
+                            events_manager_ref.unlisten_from(name.clone(), listener_id).await;
+                            break;
+                        }
                     },
                     _ = resource_receiver.recv() => {
                         events_manager_ref.unlisten_from(name.clone(), listener_id).await;
-                        println!("deno unlisten_from success");
                         break;
                     }
                 }
@@ -81,9 +83,9 @@ impl Resource for  DenoResource{
 }
 /// 向所有deno 发送消息
 #[tauri::command]
-pub async fn send_to_all_deno<R: Runtime>(window: tauri::Window<R>,key:String,name:String,content: serde_json::Value) {
+pub async fn send_to_all_deno<R: Runtime>(window: tauri::Window<R>,name:String,content: serde_json::Value) {
     let w_ref =window.sender();
-    let _ = w_ref.send(IpcMessage::SentToDeno(SentToDenoMessage{id:key,event:name,content})).await;
+    let _ = w_ref.send(IpcMessage::SentToDeno(SentToDenoMessage{id:"".to_string(),event:name,content})).await;
 }
 
 
@@ -115,7 +117,6 @@ pub  fn create_deno_channel<R: Runtime>(window: tauri::Window<R>,key:String,on_e
 pub async fn listen_on<R: Runtime>(window: tauri::Window<R>,rid: ResourceId, name: String){
     let channel = window.resources_table().get::<DenoResource>(rid).unwrap();
         channel.listen_on(name.clone()).await;
-        println!("deno listen_on success");
 }
 // 取消监听
 #[tauri::command]
@@ -124,7 +125,6 @@ pub async fn unlisten_from<R: Runtime>(window: tauri::Window<R>,rid: ResourceId,
     match deno_channel {
     Ok(channel) => {
         channel.unlisten_from(name).await;
-        
     },
     Err(_) => {},
     }
@@ -141,7 +141,6 @@ pub async fn close_deno_channel<R: Runtime>(window: tauri::Window<R>,rid: Resour
                     let _ = v.send(true).await;
                 }
             });
-           println!("deno channel closed");
         },
         Err(_) => {}
     }

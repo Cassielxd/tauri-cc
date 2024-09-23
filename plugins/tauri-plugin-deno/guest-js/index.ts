@@ -46,7 +46,7 @@ interface Litype {
   fn: any,
 }
 //deno channe默认实现 主要用于后端的 deno服务的通信
-export class Deno extends Channel<any> {
+export class Deno extends Channel<ChannelMessage> {
   #key: string;
   #rid: number = 0;
   #status: "start"|"run"|"close"
@@ -60,8 +60,7 @@ export class Deno extends Channel<any> {
     super();
     this.#key = key;
     this.#status = "start";
-    this.onmessage=(data:ChannelMessage)=>{
-      console.log(this.arr.length);
+    this.onmessage=(data)=>{
            this.arr.forEach((item:any)=>{
              if(item.name==data.event){
                item.fn(data.content);
@@ -81,15 +80,27 @@ export class Deno extends Channel<any> {
   }
   //向deno发送消息
   async send(name: string, value: any) {
+    if(this.#status=="close"){
+      console.log("deno channel is closed");
+      return;
+    }
     return await sendToDeno({ rid: this.#rid, name, content: value });
   }
   //监听
   async listenOn(name: string,fn:any) {
+    if(this.#status=="close"){
+      console.log("deno channel is closed");
+      return;
+    }
     await listenOn(this.#rid, name);
     this.arr.push({name,fn});
   }
   //解除监听
   async unlistenFrom(name: string) {
+    if(this.#status=="close"){
+      console.log("deno channel is closed");
+      return;
+    }
     await unlistenFrom(this.#rid,name);
   }
   //关闭

@@ -53,12 +53,16 @@ export default {
     async init1 () {
       if(!deno){
         deno = new Deno("main")
-        deno.onmessage=(message)=>{
-          this.result= message;
-          console.log('deno message:', message);
-        }
-        await deno.init(async ()=>{
-          await deno.listenOn("test");
+
+         deno.init(async ()=>{
+           deno.listenOn("test",(message)=>{
+            this.result= message;
+            console.log('deno message0:', message);
+          });
+           deno.listenOn("test1",(message)=>{
+            this.result= message;
+            console.log('deno message1:', message);
+          });
         });
         console.log(deno);
       }
