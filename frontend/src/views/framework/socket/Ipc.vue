@@ -16,14 +16,25 @@
         结果：{{ message2 }}
       </a-space>
     </div>
+    <div class="one-block-1">
+      <span>
+        窗口
+      </span>
+    </div>
+    <div class="one-block-2">
+      <a-space>
+        <a-button @click="createWindow">创建window</a-button>
 
+      </a-space>
+    </div>
   </div>
 </template>
 <script>
 
 import { toRaw } from 'vue';
 import { invoke } from "@tauri-apps/api/core";
-
+import { Window } from "@tauri-apps/api/window"
+import { Webview } from "@tauri-apps/api/webview"
 export default {
   data() {
     return {
@@ -81,15 +92,32 @@ export default {
       const msg = invoke("sync_message", {invoke_message:"asdasdsadsa"});
       this.message3 = msg;
     },
-    createWindow(index) {
-      ipc.invoke(ipcApiRoute.createWindow, toRaw(this.views[index])).then(id => {
-        console.log('[createWindow] id:', id);
-      })
+    createWindow() {
+      const appWindow = new Window('main');
+      const webview = new Webview(appWindow, 'theUniqueLabel', {
+        url: 'https://github.com/tauri-apps/tauri',
+        x:400,
+        y:800,
+        width: 200,
+        height: 200
+      });
+      const webview1 = new Webview(appWindow, 'theUniqueLabel1', {
+        url: 'https://www.baidu.com',
+        x:800,
+        y:100,
+        width: 200,
+        height: 200
+      });
+      webview.once('tauri://created', function () {
+        // webview successfully created
+      });
+      webview.once('tauri://error', function (e) {
+        // an error happened creating the webview
+        console.log(e);
+      });
     },
     async sendTosubWindow() {
       // 新窗口id
-      this.newWcId = await ipc.invoke(ipcApiRoute.getWCid, this.windowName);
-      ipc.sendTo(this.newWcId, specialIpcRoute.window1ToWindow2, '窗口1通过 sendTo 给窗口2发送消息');
     },
   }
 }

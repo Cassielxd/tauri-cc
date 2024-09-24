@@ -30,8 +30,10 @@
 
 import axios from 'axios';
 import storage from 'store2';
-import { Deno } from 'tauri-plugin-deno-api';
+import { DenoManager } from './index';
 let deno = null;
+let listen1 =null;
+let listen2 =null;
 export default {
   data() {
     return {
@@ -45,27 +47,22 @@ export default {
   },
   unmounted() {
     if(deno){
-      deno.close()
-      deno=null;
+      deno.unlisten(listen1);
+      deno.unlisten(listen2);
     }
   },
   methods: {
     async init1 () {
-      if(!deno){
-        deno = new Deno("main")
-
-         deno.init(async ()=>{
-           deno.listenOn("test",(message)=>{
-            this.result= message;
-            console.log('deno message0:', message);
-          });
-           deno.listenOn("test1",(message)=>{
-            this.result= message;
-            console.log('deno message1:', message);
-          });
+        deno = await DenoManager.get("main");
+      listen1=   deno.listenOn("test", (message) => {
+          this.result = message;
+          console.log('deno message0:', message);
+        });
+      listen2= await deno.listenOn("test1", (message) => {
+          this.result = message;
+          console.log('deno message1:', message);
         });
         console.log(deno);
-      }
 
     },
     sendIpcRequest () {

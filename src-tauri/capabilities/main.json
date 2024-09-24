@@ -7,6 +7,8 @@
   ],
   "permissions": [
     "core:default",
+    "core:window:allow-show",
+    "core:webview:allow-create-webview",
     "deno:allow-close-deno-channel",
     "deno:allow-listen-on",
     "deno:allow-send-to-deno",

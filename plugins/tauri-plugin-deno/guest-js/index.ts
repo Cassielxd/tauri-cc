@@ -53,12 +53,13 @@ interface ChannelMessage {
 interface Litype {
   name: String; //对应的事件
   fn: any;
+  id:number;
 }
 const manager: Map<string, Deno>= new Map();
 let task:any= null;
 export class DenoManager{
   constructor(){
-     if(!task){
+    if(!task){
       task= setInterval(()=>{
         //deno 健康检查
         for(let [key, _value] of manager.entries()){
@@ -69,7 +70,7 @@ export class DenoManager{
           })
         }
       },2000);
-     }
+    }
   }
   static async get(key: string): Promise<Deno|undefined> {
     if(manager.has(key)){
@@ -148,8 +149,13 @@ export class Deno extends Channel<ChannelMessage> {
       return;
     }
     await listenOn(this.#rid, name);
-    this.arr.push({ name, fn });
+    let id = new Date().getTime();
+    this.arr.push({ name, fn ,id });
+    return id;
   }
+  unlisten(id:number){
+    this.arr=this.arr.filter(item=>item.id!=id);
+}
   //解除监听
   async unlistenFrom(name: string) {
     if (this.#status == "close") {

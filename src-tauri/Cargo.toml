@@ -16,7 +16,7 @@ tauri-build = { version = "2.0.0-rc", features = [] }
 [dependencies]
 serde_json = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
-tauri = { workspace = true, features = ["wry"] }
+tauri = { workspace = true, features = ["wry","unstable"] }
 axum = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 clap = { workspace = true, features = ["derive", "env"] }
