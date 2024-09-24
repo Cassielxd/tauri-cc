@@ -3,48 +3,37 @@ use getset::{Getters, Setters};
 #[derive(Debug, PartialEq, serde::Serialize, serde::Deserialize, Clone, Getters, Setters, Default)]
 #[getset(get_mut = "pub", get = "pub", set = "pub")]
 pub struct ServerConfig {
-    port: Option<u16>,
+  port: Option<u16>,
 }
-
 
 #[derive(Debug, PartialEq, serde::Serialize, serde::Deserialize, Clone, Getters, Setters, Default)]
 #[getset(get_mut = "pub", get = "pub", set = "pub")]
 pub struct LogConfig {
-    log_dir: String,
-    log_temp_size: String,
-    log_pack_compress: String,
-    log_rolling_type: String,
-    log_level: String,
+  log_dir: String,
+  log_temp_size: String,
+  log_pack_compress: String,
+  log_rolling_type: String,
+  log_level: String,
 }
 
 ///服务启动配置
-#[derive(
-    Debug,
-    PartialEq,
-    serde::Serialize,
-    serde::Deserialize,
-    Clone,
-    Getters,
-    Setters,
-    MutGetters,
-    Default
-)]
+#[derive(Debug, PartialEq, serde::Serialize, serde::Deserialize, Clone, Getters, Setters, MutGetters, Default)]
 #[getset(get_mut = "pub", get = "pub", set = "pub")]
 pub struct ApplicationConfig {
-    debug: bool,
-    ///default path "target/logs/"
-    log: LogConfig,
-    server: ServerConfig,
-    dev_code_path: String,
-    pro_code_path: String,
+  debug: bool,
+  ///default path "target/logs/"
+  log: LogConfig,
+  server: ServerConfig,
+  dev_code_path: String,
+  pro_code_path: String,
 }
 
 impl ApplicationConfig {
-    pub fn from_toml(toml_data: &str) -> Self {
-        let config = match toml::from_str(toml_data) {
-            Ok(e) => e,
-            Err(e) => panic!("{}", e),
-        };
-        config
-    }
+  pub fn from_toml(toml_data: &str) -> Self {
+    let config = match toml::from_str(toml_data) {
+      Ok(e) => e,
+      Err(e) => panic!("{}", e),
+    };
+    config
+  }
 }
