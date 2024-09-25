@@ -1,5 +1,4 @@
 import { invoke, Channel } from "@tauri-apps/api/core";
-
 export interface IpcMessage {
   name: string;
   rid: number;
