@@ -1,4 +1,6 @@
 import { invoke, Channel } from "@tauri-apps/api/core";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+
 export interface IpcMessage {
   name: string;
   rid: number;
@@ -93,6 +95,10 @@ class DenoManager{
     }
   }
 }
+getCurrentWindow().onCloseRequested(async (event) => {
+   await cleanDenoChannel();
+   console.log("denoManager closeAll");
+});
 export const denoManager = new DenoManager();
 //deno channe默认实现 主要用于后端的 deno服务的通信
  class Deno extends Channel<ChannelMessage> {

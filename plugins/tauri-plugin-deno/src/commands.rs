@@ -119,6 +119,7 @@ pub async fn clean_deno_channel<R: Runtime>(window: tauri::Window<R>) {
         ids.push(id);
        }
   };
+  println!("clean_deno_channel count:{:?}",ids.len());
   for id in ids{
     let deno_channel = window.resources_table().take::<DenoResource>(id);
     match deno_channel {
@@ -168,7 +169,7 @@ pub async fn unlisten_from<R: Runtime>(window: tauri::Window<R>, rid: ResourceId
 // 关闭通道
 #[tauri::command]
 pub async fn close_deno_channel<R: Runtime>(window: tauri::Window<R>, rid: ResourceId) {
-  let deno_channel = window.resources_table().take::<DenoResource>(rid);
+  let deno_channel: Result<Arc<DenoResource>, tauri::Error> = window.resources_table().take::<DenoResource>(rid);
   match deno_channel {
     Ok(c) => {
       tokio::task::spawn(async move {

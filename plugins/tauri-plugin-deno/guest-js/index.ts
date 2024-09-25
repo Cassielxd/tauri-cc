@@ -1,4 +1,6 @@
 import { invoke, Channel } from "@tauri-apps/api/core";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+
 export interface IpcMessage {
   name: string;
   rid: number;
@@ -62,7 +64,7 @@ const manager: Map<string, Deno>= new Map();
 class DenoManager{
   constructor(){
       if(!manager.size){
-       console.log("Clear zombie channel")
+        console.log("Clear zombie channel")
         cleanDenoChannel()
       }
   }
@@ -92,6 +94,11 @@ class DenoManager{
     }
   }
 }
+// 关闭窗口时关闭所有channel 避免内存泄露
+getCurrentWindow().onCloseRequested(async (event) => {
+   await cleanDenoChannel();
+   console.log("denoManager closeAll");
+});
 export const denoManager = new DenoManager();
 //deno channe默认实现 主要用于后端的 deno服务的通信
  class Deno extends Channel<ChannelMessage> {
