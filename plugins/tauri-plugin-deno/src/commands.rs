@@ -85,14 +85,14 @@ impl Resource for DenoResource {
 }
 /// 向所有deno 发送消息
 #[tauri::command]
-pub async fn send_to_all_deno<R: Runtime>(window: tauri::Window<R>, name: String, content: serde_json::Value) {
+pub async fn send_to_all_deno<R: Runtime>(window: tauri::WebviewWindow<R>, name: String, content: serde_json::Value) {
   let w_ref = window.sender();
   let _ = w_ref.send(IpcMessage::SentToDeno(SentToDenoMessage { id: "".to_string(), event: name, content })).await;
 }
 
 // Deno命令 向指定的deno 发送消息
 #[tauri::command]
-pub async fn send_to_deno<R: Runtime>(window: tauri::Window<R>, name: String, rid: ResourceId, content: serde_json::Value) {
+pub async fn send_to_deno<R: Runtime>(window: tauri::WebviewWindow<R>, name: String, rid: ResourceId, content: serde_json::Value) {
   let channel = window.resources_table().get::<DenoResource>(rid);
   match channel {
     Ok(channel) => {
@@ -102,7 +102,7 @@ pub async fn send_to_deno<R: Runtime>(window: tauri::Window<R>, name: String, ri
   }
 }
 #[tauri::command]
-pub fn check_deno_channel<R: Runtime>(window: tauri::Window<R>, key: String) -> bool {
+pub fn check_deno_channel<R: Runtime>(window: tauri::WebviewWindow<R>, key: String) -> bool {
   let w_ref: std::sync::Arc<tokio::sync::RwLock<HashMap<String, crate::WorkerManager>>> = window.workers_table();
   let workers_table: tokio::sync::RwLockReadGuard<'_, HashMap<String, crate::WorkerManager>> = w_ref.try_read().unwrap();
   match workers_table.get(&key) {
@@ -112,7 +112,7 @@ pub fn check_deno_channel<R: Runtime>(window: tauri::Window<R>, key: String) -> 
 }
 
 #[tauri::command]
-pub async fn clean_deno_channel<R: Runtime>(window: tauri::Window<R>) {
+pub async fn clean_deno_channel<R: Runtime>(window: tauri::WebviewWindow<R>) {
    let mut ids = Vec::new();
   for (id,name) in window.resources_table().names(){
        if name.eq("deno_resource"){
@@ -135,7 +135,7 @@ pub async fn clean_deno_channel<R: Runtime>(window: tauri::Window<R>) {
 }
 // 于指定的deno 创建通道
 #[tauri::command]
-pub fn create_deno_channel<R: Runtime>(webview: tauri::Window<R>, key: String, on_event: Channel<ChannelMessage>) -> ResourceId {
+pub fn create_deno_channel<R: Runtime>(webview: tauri::WebviewWindow<R>, key: String, on_event: Channel<ChannelMessage>) -> ResourceId {
   let w_ref = webview.workers_table();
   let workers_table: tokio::sync::RwLockReadGuard<'_, HashMap<String, crate::WorkerManager>> = w_ref.try_read().unwrap();
   if let Some(worker_manager) = workers_table.get(&key) {
@@ -150,14 +150,14 @@ pub fn create_deno_channel<R: Runtime>(webview: tauri::Window<R>, key: String, o
 }
 // 监听事件
 #[tauri::command]
-pub async fn listen_on<R: Runtime>(window: tauri::Window<R>, rid: ResourceId, name: String) {
+pub async fn listen_on<R: Runtime>(window: tauri::WebviewWindow<R>, rid: ResourceId, name: String) {
 
   let channel = window.resources_table().get::<DenoResource>(rid).unwrap();
   channel.listen_on(name.clone()).await;
 }
 // 取消监听
 #[tauri::command]
-pub async fn unlisten_from<R: Runtime>(window: tauri::Window<R>, rid: ResourceId, name: String) {
+pub async fn unlisten_from<R: Runtime>(window: tauri::WebviewWindow<R>, rid: ResourceId, name: String) {
   let deno_channel = window.resources_table().get::<DenoResource>(rid);
   match deno_channel {
     Ok(channel) => {
@@ -168,7 +168,7 @@ pub async fn unlisten_from<R: Runtime>(window: tauri::Window<R>, rid: ResourceId
 }
 // 关闭通道
 #[tauri::command]
-pub async fn close_deno_channel<R: Runtime>(window: tauri::Window<R>, rid: ResourceId) {
+pub async fn close_deno_channel<R: Runtime>(window: tauri::WebviewWindow<R>, rid: ResourceId) {
   let deno_channel: Result<Arc<DenoResource>, tauri::Error> = window.resources_table().take::<DenoResource>(rid);
   match deno_channel {
     Ok(c) => {

@@ -1,6 +1,6 @@
 import { invoke, Channel } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-
+import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 export interface IpcMessage {
   name: string;
   rid: number;
@@ -95,7 +95,7 @@ class DenoManager{
     }
   }
 }
-getCurrentWindow().onCloseRequested(async (event) => {
+getCurrentWebviewWindow().onCloseRequested(async (event) => {
    await cleanDenoChannel();
    console.log("denoManager closeAll");
 });

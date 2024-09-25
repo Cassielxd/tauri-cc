@@ -23,8 +23,8 @@
     </div>
     <div class="one-block-2">
       <a-space>
-        <a-button @click="createWindow">创建window</a-button>
-
+        <a-button @click="createWindow">创建webview</a-button>
+        <a-button @click="createWindow2">创建webviewWindow</a-button>
       </a-space>
     </div>
   </div>
@@ -34,6 +34,7 @@
 import { toRaw } from 'vue';
 import { invoke } from "@tauri-apps/api/core";
 import { Window } from "@tauri-apps/api/window"
+import { WebviewWindow } from '@tauri-apps/api/webviewWindow'
 import { Webview } from "@tauri-apps/api/webview"
 export default {
   data() {
@@ -92,19 +93,26 @@ export default {
       const msg = invoke("sync_message", {invoke_message:"asdasdsadsa"});
       this.message3 = msg;
     },
+    createWindow2() {
+      const webview = new WebviewWindow('webviewtest', {
+        url: 'https://github.com/tauri-apps/tauri',
+        width: 200,
+        height: 200,
+        x:   50,
+        y: 50,
+      });
+      webview.once('tauri://error', function (e) {
+        // an error happened creating the webview
+        console.log(e);
+      });
+
+    },
     createWindow() {
       const appWindow = new Window('main');
       const webview = new Webview(appWindow, 'theUniqueLabel', {
         url: 'https://github.com/tauri-apps/tauri',
-        x:400,
-        y:800,
-        width: 200,
-        height: 200
-      });
-      const webview1 = new Webview(appWindow, 'theUniqueLabel1', {
-        url: 'https://www.baidu.com',
-        x:800,
-        y:100,
+        x:200,
+        y:200,
         width: 200,
         height: 200
       });
