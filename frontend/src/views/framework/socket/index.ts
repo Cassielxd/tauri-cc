@@ -153,11 +153,8 @@ export const denoManager = new DenoManager();
     await listenOn(this.#rid, name);
     let id = new Date().getTime();
     this.arr.push({ name, fn ,id });
-    return id;
+    return ()=>{this.arr=this.arr.filter(item=>item.id!=id);};
   }
-  unlisten(id:number){
-    this.arr=this.arr.filter(item=>item.id!=id);
-}
   //解除监听
   async unlistenFrom(name: string) {
     if (this.#status == "close") {

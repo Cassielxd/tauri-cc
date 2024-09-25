@@ -32,8 +32,8 @@ import axios from 'axios';
 import storage from 'store2';
 import { denoManager } from './index';
 let deno = null;
-let listen1 =null;
-let listen2 =null;
+let ulisten1 =null;
+let ulisten2 =null;
 export default {
   data() {
     return {
@@ -47,18 +47,18 @@ export default {
   },
   unmounted() {
     if(deno){
-      deno.unlisten(listen1);
-      deno.unlisten(listen2);
+      ulisten1();
+      ulisten2();
     }
   },
   methods: {
     async init1 () {
         deno = await denoManager.get("main");
-      listen1=   deno.listenOn("test", (message) => {
+      ulisten1=   deno.listenOn("test", (message) => {
           this.result = message;
           console.log('deno message0:', message);
         });
-      listen2= await deno.listenOn("test1", (message) => {
+      ulisten2= await deno.listenOn("test1", (message) => {
           this.result = message;
           console.log('deno message1:', message);
         });
