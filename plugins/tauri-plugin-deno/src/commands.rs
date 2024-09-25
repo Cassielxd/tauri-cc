@@ -48,9 +48,7 @@ impl DenoResource {
       loop {
         select! {
             value = receiver.recv() => {
-             
                 let result = on_event_ref.send(ChannelMessage{event:name.clone(),content:value.unwrap()});
-                
                 if let Err(e) = result{
                   println!("send_message_to_deno_error:{:?}",e);
                     events_manager_ref.unlisten_from(name.clone(), listener_id).await;
@@ -80,7 +78,7 @@ impl DenoResource {
 }
 impl Resource for DenoResource {
   fn name(&self) -> std::borrow::Cow<'_, str> {
-    std::any::type_name::<Self>().into()
+    std::borrow::Cow::Borrowed("deno_resource")
   }
 
   fn close(self: std::sync::Arc<Self>) {}
@@ -111,6 +109,28 @@ pub fn check_deno_channel<R: Runtime>(window: tauri::Window<R>, key: String) -> 
     Some(_) => true,
     None => false,
   }
+}
+
+#[tauri::command]
+pub async fn clean_deno_channel<R: Runtime>(window: tauri::Window<R>) {
+   let mut ids = Vec::new();
+  for (id,name) in window.resources_table().names(){
+       if name.eq("deno_resource"){
+        ids.push(id);
+       }
+  };
+  for id in ids{
+    let deno_channel = window.resources_table().take::<DenoResource>(id);
+    match deno_channel {
+      Ok(c) => {
+        let map = c.resouce_map.lock().await;
+        for (_, v) in map.iter() {
+          let _ = v.send(true).await;
+        }
+      }
+      Err(_) => {}
+    }
+  } 
 }
 // 于指定的deno 创建通道
 #[tauri::command]

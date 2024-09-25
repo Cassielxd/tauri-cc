@@ -57,7 +57,8 @@ pub fn init<R: Runtime>(main_module: String) -> TauriPlugin<R> {
       commands::create_deno_channel,
       commands::unlisten_from,
       commands::listen_on,
-      commands::close_deno_channel
+      commands::close_deno_channel,
+      commands::clean_deno_channel
     ])
     .setup(|app, _api: tauri::plugin::PluginApi<R, ()>| {
       let app_ref = app.clone();

@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-clean-deno-channel"
+description = "Enables the clean_deno_channel command without any pre-configured scope."
+commands.allow = ["clean_deno_channel"]
+
+[[permission]]
+identifier = "deny-clean-deno-channel"
+description = "Denies the clean_deno_channel command without any pre-configured scope."
+commands.deny = ["clean_deno_channel"]

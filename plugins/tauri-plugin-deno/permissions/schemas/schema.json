@@ -295,6 +295,16 @@
       "type": "string",
       "oneOf": [
         {
+          "description": "Enables the clean_deno_channel command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-clean-deno-channel"
+        },
+        {
+          "description": "Denies the clean_deno_channel command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-clean-deno-channel"
+        },
+        {
           "description": "Enables the close_deno_channel command without any pre-configured scope.",
           "type": "string",
           "const": "allow-close-deno-channel"

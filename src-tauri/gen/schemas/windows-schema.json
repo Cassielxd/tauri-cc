@@ -1587,6 +1587,11 @@
           "const": "core:window:deny-unminimize"
         },
         {
+          "description": "Enables the clean_deno_channel command without any pre-configured scope.",
+          "type": "string",
+          "const": "deno:allow-clean-deno-channel"
+        },
+        {
           "description": "Enables the close_deno_channel command without any pre-configured scope.",
           "type": "string",
           "const": "deno:allow-close-deno-channel"
@@ -1615,6 +1620,11 @@
           "description": "Enables the unlisten_from command without any pre-configured scope.",
           "type": "string",
           "const": "deno:allow-unlisten-from"
+        },
+        {
+          "description": "Denies the clean_deno_channel command without any pre-configured scope.",
+          "type": "string",
+          "const": "deno:deny-clean-deno-channel"
         },
         {
           "description": "Denies the close_deno_channel command without any pre-configured scope.",

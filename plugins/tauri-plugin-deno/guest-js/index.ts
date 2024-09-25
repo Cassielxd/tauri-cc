@@ -44,6 +44,10 @@ export async function checkDenoChannel(
     key: key,
   });
 }
+export async function cleanDenoChannel(
+): Promise<boolean> {
+  return await invoke("plugin:deno|clean_deno_channel", {});
+}
 
 interface ChannelMessage {
   event: String; //对应的事件
@@ -55,23 +59,14 @@ interface Litype {
   id:number;
 }
 const manager: Map<string, Deno>= new Map();
-let task:any= null;
-export class DenoManager{
+class DenoManager{
   constructor(){
-    if(!task){
-      task= setInterval(()=>{
-        //deno 健康检查
-        for(let [key, _value] of manager.entries()){
-          checkDenoChannel(key).then(re=>{
-            if(!re){
-              DenoManager.close(key);
-            }
-          })
-        }
-      },2000);
-    }
+      if(!manager.size){
+       console.log("Clear zombie channel")
+        cleanDenoChannel()
+      }
   }
-  static async get(key: string): Promise<Deno|undefined> {
+   async get(key: string): Promise<Deno|undefined> {
     if(manager.has(key)){
       return manager.get(key);
     }
@@ -83,22 +78,23 @@ export class DenoManager{
     manager.set(key, deno);
     return deno;
   }
-  static async close(key: string) {
+   async close(key: string) {
     let deno = manager.get(key);
     if(deno){
       await deno.close();
       manager.delete(key);
     }
   }
-  static async closeAll() {
+   async closeAll() {
     for(let [key, value] of manager.entries()){
       await value.close();
       manager.delete(key);
     }
   }
 }
+export const denoManager = new DenoManager();
 //deno channe默认实现 主要用于后端的 deno服务的通信
-export class Deno extends Channel<ChannelMessage> {
+ class Deno extends Channel<ChannelMessage> {
   #key: string;
   #rid: number = 0;
   #status: "start" | "run" | "close";

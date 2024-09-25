@@ -30,7 +30,7 @@
 
 import axios from 'axios';
 import storage from 'store2';
-import { DenoManager } from './index';
+import { denoManager } from './index';
 let deno = null;
 let listen1 =null;
 let listen2 =null;
@@ -53,7 +53,7 @@ export default {
   },
   methods: {
     async init1 () {
-        deno = await DenoManager.get("main");
+        deno = await denoManager.get("main");
       listen1=   deno.listenOn("test", (message) => {
           this.result = message;
           console.log('deno message0:', message);

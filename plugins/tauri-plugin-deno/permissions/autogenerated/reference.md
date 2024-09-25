@@ -11,6 +11,32 @@
 <tr>
 <td>
 
+`deno:allow-clean-deno-channel`
+
+</td>
+<td>
+
+Enables the clean_deno_channel command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`deno:deny-clean-deno-channel`
+
+</td>
+<td>
+
+Denies the clean_deno_channel command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
 `deno:allow-close-deno-channel`
 
 </td>

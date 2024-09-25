@@ -13,6 +13,7 @@
     "deno:allow-listen-on",
     "deno:allow-send-to-deno",
     "deno:allow-unlisten-from",
-    "deno:allow-create-deno-channel"
+    "deno:allow-create-deno-channel",
+    "deno:allow-clean-deno-channel"
   ]
 }
