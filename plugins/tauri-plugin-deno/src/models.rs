@@ -1,13 +1,10 @@
-use deno_pro_lib::args::flags_from_vec;
-use deno_pro_lib::deno_ipcs::messages::IpcMessage;
-use deno_pro_lib::deno_ipcs::IpcReceiver;
-use deno_pro_lib::deno_ipcs::{deno_ipcs, events_manager::EventsManager, IpcSender};
-use deno_pro_lib::deno_runtime::deno_core::v8;
-use deno_pro_lib::deno_runtime::deno_permissions::PermissionsContainer;
-use deno_pro_lib::deno_runtime::tokio_util::create_and_run_current_thread;
-use deno_pro_lib::deno_runtime::WorkerExecutionMode;
-use deno_pro_lib::factory::CliFactory;
-use deno_pro_lib::tools::run::maybe_npm_install;
+use deno_lib::args::flags_from_vec;
+use deno_lib::deno_ipcs::{deno_ipc, events_manager::EventsManager, IpcSender};
+use deno_lib::deno_runtime::deno_core::v8;
+use deno_lib::deno_runtime::tokio_util::create_and_run_current_thread;
+use deno_lib::deno_runtime::WorkerExecutionMode;
+use deno_lib::factory::CliFactory;
+use deno_lib::tools::run::maybe_npm_install;
 use futures::task::AtomicWaker;
 use serde::Deserialize;
 use serde::Serialize;
@@ -35,7 +32,7 @@ impl WorkerManager {
     let build = thread::Builder::new().name(format!("js-engine"));
     // 隐藏的线程任务，用于执行JavaScript引擎的初始化和运行"resource/main.ts".into()
     let _ = build.spawn(move || {
-      let args = vec!["".to_string().into(), "run".to_string().into(), main_path.into()];
+      let args = vec!["".to_string().into(), "run".to_string().into(), main_path.into(),"--allow-all".to_string().into()];
       // 将args转换为flagset
       let flags = Arc::new(flags_from_vec(args).unwrap());
       let future = async {
@@ -49,12 +46,12 @@ impl WorkerManager {
         let worker_factory = factory.create_cli_main_worker_factory().await.unwrap();
 
         // 创建自定义工作线程实例
-        let mut main_worker: deno_pro_lib::worker::CliMainWorker = worker_factory
+        let mut main_worker: deno_lib::worker::CliMainWorker = worker_factory
           .create_custom_worker(
             WorkerExecutionMode::Run,
-            main_module,
-            PermissionsContainer::allow_all(),
-            vec![deno_ipcs::init_ops_and_esm(deno_sender, events_manager)],
+            main_module.clone(),
+            worker_factory.shared.root_permissions.clone(),
+            vec![deno_ipc::init_ops_and_esm(deno_sender, events_manager)],
             Default::default(),
           )
           .await
