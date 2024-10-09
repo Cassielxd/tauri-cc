@@ -6,7 +6,7 @@ use tauri::{
   Manager, Runtime,
 };
 
-use deno_lib::deno_ipcs::{events_manager::EventsManager, IpcReceiver, IpcSender};
+use deno_lib::deno_ipc::{events_manager::EventsManager, IpcReceiver, IpcSender};
 
 use std::collections::HashMap;
 use std::sync::Arc;

@@ -1,5 +1,5 @@
 use deno_lib::args::flags_from_vec;
-use deno_lib::deno_ipcs::{deno_ipc, events_manager::EventsManager, IpcSender};
+use deno_lib::deno_ipc::{events_manager::EventsManager, IpcSender};
 use deno_lib::deno_runtime::deno_core::v8;
 use deno_lib::deno_runtime::tokio_util::create_and_run_current_thread;
 use deno_lib::deno_runtime::WorkerExecutionMode;
@@ -14,6 +14,9 @@ use std::sync::Arc;
 use std::thread;
 use tokio::select;
 
+macro_rules! svec {
+  ($($x:expr),* $(,)?) => (vec![$($x.to_string().into()),*]);
+}
 #[derive(Clone)]
 pub struct WorkerManager {
   pub main_nodule: String,
@@ -32,7 +35,7 @@ impl WorkerManager {
     let build = thread::Builder::new().name(format!("js-engine"));
     // 隐藏的线程任务，用于执行JavaScript引擎的初始化和运行"resource/main.ts".into()
     let _ = build.spawn(move || {
-      let args = vec!["".to_string().into(), "run".to_string().into(), main_path.into(),"--allow-all".to_string().into()];
+      let args = svec!["", "run", "--allow-all",main_path.as_str()];
       // 将args转换为flagset
       let flags = Arc::new(flags_from_vec(args).unwrap());
       let future = async {
@@ -42,17 +45,15 @@ impl WorkerManager {
         let main_module = cli_options.resolve_main_module().unwrap();
         // 运行npm install
         maybe_npm_install(&factory).await.unwrap();
+        factory.ipc_state_resolver_new(deno_sender,events_manager).await;
         // 创建CLI主工作线程工厂实例
         let worker_factory = factory.create_cli_main_worker_factory().await.unwrap();
 
         // 创建自定义工作线程实例
         let mut main_worker: deno_lib::worker::CliMainWorker = worker_factory
-          .create_custom_worker(
+          .create_main_worker(
             WorkerExecutionMode::Run,
-            main_module.clone(),
-            worker_factory.shared.root_permissions.clone(),
-            vec![deno_ipc::init_ops_and_esm(deno_sender, events_manager)],
-            Default::default(),
+            main_module.clone()
           )
           .await
           .unwrap();

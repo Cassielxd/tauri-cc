@@ -20,7 +20,7 @@ futures = "0.3.28"
 state = "0.5"
 #deno_pro ={version = "2.0.0-rc.2", git = "https://gitee.com/stringlxd/deno_pro.git",branch = "deno_pro",features = ["hmr"]}
 #deno ={version = "2.0.0-rc.10", git = "https://github.com/Cassielxd/deno.git",branch = "deno2.0.0-rc.10"}
-deno = { version = "2.0.0-rc.10", path = "D:\\workspace\\rust2024\\deno\\cli", features = ["hmr"] }
+deno = { version = "2.0.0-rc.10", path = "D:\\workspace\\rust2024\\deno\\cli" }
 uuid = { workspace = true }
 [build-dependencies]
 tauri-plugin = { version = "2", features = ["build"] }

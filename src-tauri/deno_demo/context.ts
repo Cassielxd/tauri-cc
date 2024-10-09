@@ -77,7 +77,7 @@ class Context {
     const ctx = this;
     const { controller } = ctx;
     //@ts-ignore
-    let ipcBroadcastChannel = new IpcBroadcastChannel("testIpc");
+    let ipcBroadcastChannel = new Deno.IpcBroadcastChannel("testIpc");
     ipcBroadcastChannel.onmessage=async ({data:request}: MessageEvent)=>{
       let response = {status:200,message:"success",body:""};
       try {

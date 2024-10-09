@@ -54,7 +54,7 @@ export default {
   methods: {
     async init1 () {
         deno = await denoManager.get("main");
-      ulisten1=   deno.listenOn("test", (message) => {
+      ulisten1=  await deno.listenOn("test", (message) => {
           this.result = message;
           console.log('deno message0:', message);
         });

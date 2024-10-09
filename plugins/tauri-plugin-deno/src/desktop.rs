@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use deno_lib::deno_ipcs::{messages::IpcMessage, IpcReceiver, IpcSender};
+use deno_lib::deno_ipc::{messages::IpcMessage, IpcReceiver, IpcSender};
 use tauri::{AppHandle, Emitter, Manager, Runtime};
 use tokio::sync::RwLock;
 

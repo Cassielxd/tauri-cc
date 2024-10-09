@@ -3,7 +3,7 @@ use std::{collections::HashMap, sync::Arc};
 use serde::{Deserialize, Serialize};
 use tauri::{ipc::Channel, Emitter, Manager, Resource, ResourceId, Runtime};
 
-use deno_lib::deno_ipcs::{
+use deno_lib::deno_ipc::{
   events_manager::EventsManager,
   messages::{IpcMessage, SentToDenoMessage},
 };
