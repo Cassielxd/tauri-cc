@@ -25,7 +25,7 @@ pub struct ChannelMessage {
 }
 type ResouceMap = Arc<Mutex<HashMap<String, Sender<bool>>>>;
 //DenoResource 通信默认实现
-struct DenoResource{
+struct DenoResource {
   pub events_manager: EventsManager,
   pub on_event: Channel<ChannelMessage>,
   pub resouce_map: ResouceMap,
@@ -113,14 +113,14 @@ pub fn check_deno_channel<R: Runtime>(window: tauri::WebviewWindow<R>, key: Stri
 
 #[tauri::command]
 pub async fn clean_deno_channel<R: Runtime>(window: tauri::WebviewWindow<R>) {
-   let mut ids = Vec::new();
-  for (id,name) in window.resources_table().names(){
-       if name.eq("deno_resource"){
-        ids.push(id);
-       }
-  };
-  println!("clean_deno_channel count:{:?}",ids.len());
-  for id in ids{
+  let mut ids = Vec::new();
+  for (id, name) in window.resources_table().names() {
+    if name.eq("deno_resource") {
+      ids.push(id);
+    }
+  }
+  println!("clean_deno_channel count:{:?}", ids.len());
+  for id in ids {
     let deno_channel = window.resources_table().take::<DenoResource>(id);
     match deno_channel {
       Ok(c) => {
@@ -131,7 +131,7 @@ pub async fn clean_deno_channel<R: Runtime>(window: tauri::WebviewWindow<R>) {
       }
       Err(_) => {}
     }
-  } 
+  }
 }
 // 于指定的deno 创建通道
 #[tauri::command]
@@ -142,7 +142,7 @@ pub fn create_deno_channel<R: Runtime>(webview: tauri::WebviewWindow<R>, key: St
     let deno_channel = DenoResource {
       events_manager: worker_manager.events_manager.clone(),
       on_event,
-      resouce_map: Arc::new(Mutex::new(HashMap::new())) ,
+      resouce_map: Arc::new(Mutex::new(HashMap::new())),
     };
     return webview.resources_table().add(deno_channel);
   }
@@ -151,7 +151,6 @@ pub fn create_deno_channel<R: Runtime>(webview: tauri::WebviewWindow<R>, key: St
 // 监听事件
 #[tauri::command]
 pub async fn listen_on<R: Runtime>(window: tauri::WebviewWindow<R>, rid: ResourceId, name: String) {
-
   let channel = window.resources_table().get::<DenoResource>(rid).unwrap();
   channel.listen_on(name.clone()).await;
 }

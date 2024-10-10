@@ -42,7 +42,8 @@ impl<R: Runtime> DenoManager<R> {
     let deno_sender_ref = self.deno_sender.clone();
     //初始化主deno线程
     tokio::task::spawn(async move {
-      reff.write().await.insert("main".to_string(), WorkerManager::new(main_module_ref, deno_sender_ref));
+      let key = "main".to_string();
+      reff.write().await.insert(key.clone(), WorkerManager::new(key, main_module_ref, deno_sender_ref));
       run(handle_ref).await;
     });
     Ok(())

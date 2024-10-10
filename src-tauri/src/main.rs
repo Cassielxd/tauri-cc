@@ -10,7 +10,7 @@ use tauri_desktop::APPLICATION_CONTEXT;
 async fn main() -> anyhow::Result<()> {
   init_context().await;
   let ref_app_config = APPLICATION_CONTEXT.get::<ApplicationConfig>();
-  let mut build = tauri::Builder::default(); 
+  let mut build = tauri::Builder::default();
   build = build.setup(|app| {
     #[cfg(debug_assertions)] //仅在调试时自动打开开发者工具
     {
